@@ -286,6 +286,14 @@ function render(next) {
         : next.rating;
     $("decision-card").dataset.rating = next.rating || "REVIEW";
   }
+  $("manager-summary").hidden = !completed;
+  for (const [key, id] of [["portfolio", "manager-portfolio"], ["recommendation", "manager-recommendation"]]) {
+    const content = completed ? next.manager_summary?.[key] : null;
+    if (content) $(id).innerHTML = content;
+    else $(id).textContent = completed
+      ? (key === "portfolio" ? "Portfolio input was not recorded for this run." : "No manager recommendation was recorded.")
+      : "";
+  }
   message("memory-note", next.memory_note);
   reports();
   controls();

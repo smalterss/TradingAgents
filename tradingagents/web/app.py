@@ -59,6 +59,7 @@ def idle_snapshot():
         "stage": "analysts",
         "analyst_status": dict.fromkeys(ANALYSTS, "pending"),
         "rating": None,
+        "manager_summary": None,
         "error": None,
         "memory_note": "",
         "downloads": False,
@@ -111,6 +112,12 @@ class RunManager:
                 self.ended = time.monotonic()
                 if kind == "completed":
                     self.current["rating"] = event.get("rating")
+                    summary = event.get("manager_summary") or {}
+                    self.current["manager_summary"] = {
+                        key: render_markdown(summary[key])
+                        for key in ("portfolio", "recommendation")
+                        if isinstance(summary.get(key), str)
+                    }
                     self.current["downloads"] = True
                 else:
                     self.current["error"] = (

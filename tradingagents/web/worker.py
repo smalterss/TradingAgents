@@ -5,6 +5,7 @@ from pathlib import Path
 
 from tradingagents.alpaca_portfolio import AlpacaPortfolioError, resolve_portfolio
 from tradingagents.dataflows.symbols import crypto_base
+from tradingagents.reporting import manager_summary
 from tradingagents.web.config import ANALYSTS
 
 LOG = logging.getLogger(__name__)
@@ -115,7 +116,8 @@ def execute_run(events, selection, config, report_dir, graph_factory=None):
             report_state["memory_note"] = progress(final_state)["memory_note"]
         graph.save_reports(report_state, ticker, Path(report_dir), html=True)
         events.put(
-            {"type": "completed", **progress(final_state, selection["analysts"]), "rating": run_rating(final_state)}
+            {"type": "completed", **progress(final_state, selection["analysts"]),
+             "rating": run_rating(final_state), "manager_summary": manager_summary(final_state)}
         )
     except Exception as exc:
         # Error disclosure policy: see tradingagents-web SPEC.

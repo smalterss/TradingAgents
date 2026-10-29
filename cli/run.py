@@ -9,6 +9,8 @@ from pathlib import Path
 
 import typer
 from rich.live import Live
+from rich.markdown import Markdown
+from rich.panel import Panel
 
 from cli.display import (
     ANALYST_ORDER,
@@ -31,6 +33,7 @@ from tradingagents.graph.analyst_execution import (
     build_analyst_execution_plan,
 )
 from tradingagents.graph.trading_graph import TradingAgentsGraph
+from tradingagents.reporting import manager_summary
 
 
 def _run_directory(config: dict, ticker: str, trade_date: str) -> Path:
@@ -391,9 +394,20 @@ def run_analysis(checkpoint: bool | None = None, portfolio=None, flags=None):
             "decision text below and judge it yourself.[/yellow]\n"
         )
     console.print(f"[dim]{analyst_wall_time_tracker.format_summary()}[/dim]")
+    _display_manager_summary(final_state)
 
     _offer_reports(final_state, graph, selections["ticker"],
                    save=flags.get("save"), show=flags.get("show"), html=flags.get("html"))
+
+
+def _display_manager_summary(final_state: dict) -> None:
+    summary = manager_summary(final_state)
+    console.print(Panel(Markdown(summary["portfolio"]), title="Portfolio given to the manager"))
+    console.print(Panel(
+        Markdown(summary["recommendation"] or "No manager recommendation was recorded."),
+        title="Manager’s recommendation",
+    ))
+    console.print("[dim]Research recommendation only. No order has been placed.[/dim]")
 
 
 def _yes(question: str) -> bool:
