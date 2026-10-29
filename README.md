@@ -221,6 +221,24 @@ At start-up the interactive CLI mentions a newer release and notices from Tauric
 
 A saved report also includes `complete_report.html`, the report as one page with its sections listed beside the text, for reading in a browser, on a phone or in print. Answering the save question at the prompt also asks about the page and can open it in your browser; `--no-html` skips it, and so does `ta.save_reports(state, "NVDA", html=False)` from Python.
 
+### Local browser dashboard
+
+For a graphical research workspace, install the optional web dependencies and start the local server:
+
+```bash
+pip install ".[web]"           # use -e ".[web,dev]" for development
+tradingagents-web              # opens http://127.0.0.1:8000
+# Or: python -m tradingagents.web --port 8001 --no-browser
+```
+
+Configure provider credentials in your environment or `.env` as described above before starting. Keys are never entered in or sent to the browser. The dashboard lets you choose an instrument, analysis date, analysts, quick/deep providers and model IDs, report language, and debate depth. It shows real agent progress, partial reports as they arrive, and the final research rating. Completed reports can be downloaded as Markdown or self-contained HTML. Custom model IDs are accepted even when absent from the suggestions.
+
+One analysis runs at a time. **Stop analysis** terminates local analysis work and retains already-received sections as incomplete; requests a provider has already accepted may still be charged. A failed or stopped run is not presented as a completed decision. Reloading the page reconnects to the current run while the server is running. Starting another analysis replaces that view; exported reports remain on disk. Stopping the server stops its active worker.
+
+The server binds only to loopback and is intended for one person on their own computer, not a public or shared service. It uses your existing data-vendor and endpoint configuration. Portfolio editing, backtesting, history browsing, and browser-based sign-in are not included; use the Python API or CLI for those workflows (including `tradingagents login chatgpt` before using a subscription). Analysis retains the existing memory-settlement behavior, which may make additional provider calls for past decisions.
+
+This is a research dashboard, not a brokerage terminal: **no orders are executed**. Historical source coverage can be incomplete, and model output is not guaranteed or financial advice.
+
 ### Markets and tickers
 
 TradingAgents works with any market Yahoo Finance covers, using the exchange-suffixed ticker. Company identity and the alpha benchmark resolve automatically per market.
