@@ -23,6 +23,8 @@ Model-facing tools hide run ticker/date fields from model schemas and obtain the
 
 Holdings context reaches trader, risk roles and portfolio manager rather than the research team's directional debate. The configured output language also applies to researcher and risk-debater responses stored in debate history; machine-readable rating labels and values remain English. This implemented behavior, covered by `tests/test_i18n_coverage.py`, differs from the default-config comment claiming internal debate stays English. Optional Jev screening filters off-company social posts and supplies stance counts; without configured credentials posts pass through unscreened.
 
+The Portfolio Manager returns the exact portfolio block included in its prompt as `portfolio_context`, including the absent-context notice. This makes the input auditable in streamed results and resumed runs; completion summary semantics belong to `tradingagents-package`.
+
 ## Boundary
 
 Roles consume injected model interfaces and routed evidence. They do not instantiate provider SDK clients, import vendor libraries directly, control checkpoint persistence, mutate holdings, or submit orders. Knowledge-time and unavailable-data semantics are owned by `tradingagents-dataflows`; the graph controls role sequencing and budgets.

@@ -17,6 +17,8 @@ Flags and supported environment values answer their own questions. Saved prefere
 
 Validate portfolio input before execution and check credentials separately for effective model tiers. The CLI streams the graph directly, so it must use the shared state, recording and checkpoint lifecycle described by `tradingagents-graph`, not assume `propagate` has already run. Report generation uses the package writer rather than a CLI-specific serialization path.
 
+After successful completion the CLI always prints the shared manager portfolio-input/recommendation summary (`tradingagents-package`) before optional report prompts, independent of save/show flags. It does not print a final summary after interruption or failure.
+
 ## Startup notices
 
 Interactive startup may fetch release/notices in the background at most daily, without run data. Non-terminal runs do not check; `TRADINGAGENTS_NO_UPDATE_CHECK=1` disables checking. Notice failure must not determine the investment decision.

@@ -36,6 +36,8 @@ Failures are collected per cell and settlement failures are surfaced separately.
 
 API and CLI use one report-tree writer. It writes populated sections and a consolidated Markdown report, optionally HTML, with analysis date and producing settings. Reusing a destination removes only obsolete generated files, preserving unrelated user files. HTML treats model text as untrusted: raw HTML and images are disabled, metadata escaped, and a content security policy blocks scripts and fetching.
 
+Completed-run summaries pair the exact portfolio prompt block returned by the Portfolio Manager with its unaltered decision and canonical rating, without additional broker reads or model calls. Missing context stays explicitly unavailable rather than becoming a flat book. Shared Markdown/HTML reports retain `5_portfolio/context.md` alongside `decision.md`; both generated files participate in cleanup. Summaries do not infer executable quantities or claim an order occurred.
+
 Environment overrides are centrally mapped and invalid typed values fail explicitly. Import loads dotenv files without replacing already-set environment values and builds defaults at import time; callers can rebuild defaults to observe later changes.
 
 ## Boundary

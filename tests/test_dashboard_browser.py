@@ -105,6 +105,34 @@ def start(page):
     playwright.expect(page.locator("#run-status")).to_have_text("RESEARCHING")
 
 
+@pytest.mark.parametrize("width", [1440, 390])
+def test_completed_manager_summary_and_next_run_reset(dashboard, width):
+    page, state = dashboard
+    page.set_viewport_size({"width": width, "height": 1100})
+    playwright.expect(page.locator("#manager-summary")).to_be_hidden()
+    start(page)
+    state["run"].update(status="completed", rating="Hold", manager_summary={
+        "portfolio": "<p>Cash available: 5,000.00 USD</p><p>No current position in NVDA</p>",
+        "recommendation": "<p><strong>Rating: Hold</strong></p><p>Wait for earnings before adding exposure.</p>",
+    })
+    playwright.expect(page.locator("#manager-summary")).to_be_visible()
+    playwright.expect(page.locator("#manager-portfolio")).to_contain_text("5,000.00 USD")
+    playwright.expect(page.locator("#manager-recommendation")).to_contain_text("Wait for earnings")
+    page.reload()
+    playwright.expect(page.locator("#manager-portfolio")).to_contain_text("5,000.00 USD")
+    assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+    shots = ASSETS.parents[2] / ".thinkrail" / "context" / "qa"
+    shots.mkdir(parents=True, exist_ok=True)
+    page.locator("#manager-summary").screenshot(path=str(shots / f"manager-summary-{width}.png"))
+    page.get_by_role("button", name="Run analysis").click()
+    playwright.expect(page.locator("#run-status")).to_have_text("RESEARCHING")
+    playwright.expect(page.locator("#manager-summary")).to_be_hidden()
+    assert page.locator("#manager-portfolio").text_content() == ""
+    state["run"].update(status="failed", manager_summary={"portfolio": "STALE", "recommendation": "Buy"})
+    playwright.expect(page.locator("#run-status")).to_have_text("FAILED")
+    playwright.expect(page.locator("#manager-summary")).to_be_hidden()
+
+
 def test_dashboard_setup_start_stop_and_partial_reports(dashboard):
     page, state = dashboard
     playwright.expect(page.get_by_role("heading", name="Let the evidence lead the conversation.")).to_be_visible()

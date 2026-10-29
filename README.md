@@ -362,6 +362,8 @@ _, decision = ta.propagate("NVDA", "2026-09-01", portfolio=portfolio)
 
 The CLI takes the same content as a JSON file: `tradingagents --portfolio my_book.json`.
 
+After a run completes, the dashboard and terminal show **Portfolio given to the manager** alongside **Manager’s recommendation**. This uses the exact portfolio context and original decision from that run—not refreshed balances or an additional AI summary. Saved Markdown/HTML reports retain the same input beside the decision (`5_portfolio/context.md` and `decision.md`). Missing portfolio context is explicitly marked, not assumed to mean zero holdings. Recommendations are research only; no order is placed.
+
 An empty `positions` list means a flat book, which is different from passing nothing. A run without a portfolio is never treated as flat.
 
 ## Persistence and Recovery
