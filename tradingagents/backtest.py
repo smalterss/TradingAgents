@@ -167,7 +167,8 @@ def run_backtest(
         run_id = _new_run(runs)
     run_dir = runs / run_id
     run_config = {**config, "results_dir": str(run_dir),
-                  "memory_log_path": str(run_dir / "trading_memory.md")}
+                  "memory_log_path": str(run_dir / "trading_memory.md"),
+                  "alpaca_portfolio_enabled": False}
 
     graph = TradingAgentsGraph(selected_analysts, config=run_config)
     result = BacktestResult(run_id=run_id, log_path=Path(run_config["memory_log_path"]))

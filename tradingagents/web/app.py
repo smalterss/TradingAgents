@@ -114,7 +114,10 @@ class RunManager:
                     self.current["downloads"] = True
                 else:
                     self.current["error"] = (
-                        "Analysis failed. Check local configuration and server logs."
+                        "Alpaca paper portfolio unavailable. Check credentials and connectivity. "
+                        "Past-date analyses require disabling TRADINGAGENTS_ALPACA_PORTFOLIO_ENABLED."
+                        if event.get("reason") == "alpaca_portfolio"
+                        else "Analysis failed. Check local configuration and server logs."
                     )
 
     def refresh(self):

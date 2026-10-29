@@ -111,6 +111,13 @@ def run_analysis(checkpoint: bool | None = None, portfolio=None, flags=None):
     selections = get_user_selections(flags)
 
     config = _build_run_config(selections, checkpoint)
+    from tradingagents.alpaca_portfolio import AlpacaPortfolioError, resolve_portfolio
+
+    try:
+        portfolio = resolve_portfolio(portfolio, config, selections["analysis_date"])
+    except AlpacaPortfolioError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=1) from None
 
     stats_handler = StatsCallbackHandler()
 

@@ -3,6 +3,7 @@
 import logging
 from pathlib import Path
 
+from tradingagents.alpaca_portfolio import AlpacaPortfolioError, resolve_portfolio
 from tradingagents.dataflows.symbols import crypto_base
 from tradingagents.web.config import ANALYSTS
 
@@ -85,14 +86,16 @@ def execute_run(events, selection, config, report_dir, graph_factory=None):
             graph_factory = TradingAgentsGraph
         from tradingagents.agents.rating import run_rating
 
-        graph = graph_factory(selection["analysts"], config=config, debug=False)
         ticker, day = selection["ticker"], selection["trade_date"]
+        portfolio = resolve_portfolio(None, config, day)
+        graph = graph_factory(selection["analysts"], config=config, debug=False)
         asset_type = "crypto" if crypto_base(ticker) else "stock"
         events.put({"type": "running"})
         try:
-            state = graph.create_run_state(ticker, day, asset_type=asset_type)
+            portfolio_args = {"portfolio": portfolio} if portfolio is not None else {}
+            state = graph.create_run_state(ticker, day, asset_type=asset_type, **portfolio_args)
             args = graph.propagator.get_graph_args()
-            thread_id = graph.begin_checkpoint(ticker, day, asset_type=asset_type)
+            thread_id = graph.begin_checkpoint(ticker, day, asset_type=asset_type, **portfolio_args)
             if thread_id is not None:
                 args.setdefault("config", {}).setdefault("configurable", {})["thread_id"] = (
                     thread_id
@@ -103,7 +106,7 @@ def execute_run(events, selection, config, report_dir, graph_factory=None):
                     final_state.update(chunk)
                     events.put({"type": "progress", **progress(final_state, selection["analysts"])})
             graph.record_decision(ticker, day, final_state)
-            graph.clear_checkpoint_on_success(ticker, day, asset_type=asset_type)
+            graph.clear_checkpoint_on_success(ticker, day, asset_type=asset_type, **portfolio_args)
         finally:
             graph.end_checkpoint()
         # A unique directory owned by this run, never a browser-supplied path.
@@ -117,4 +120,7 @@ def execute_run(events, selection, config, report_dir, graph_factory=None):
     except Exception as exc:
         # Error disclosure policy: see tradingagents-web SPEC.
         LOG.error("Research worker failed (%s)", type(exc).__name__)
-        events.put({"type": "failed"})
+        failure = {"type": "failed"}
+        if isinstance(exc, AlpacaPortfolioError):
+            failure["reason"] = "alpaca_portfolio"
+        events.put(failure)

@@ -181,6 +181,9 @@ class TradingAgentsGraph:
         PortfolioRating enum.
         """
         trade_date = _validate_trade_date(trade_date)
+        from tradingagents.alpaca_portfolio import resolve_portfolio
+
+        portfolio = resolve_portfolio(portfolio, self.config, trade_date)
 
         with run_config(self.config), \
                 self.checkpoint_scope(company_name, trade_date, asset_type, portfolio) as thread_id_value:
