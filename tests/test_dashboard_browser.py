@@ -52,7 +52,7 @@ def browser():
 @pytest.fixture
 def dashboard(browser):
     page = browser.new_page(viewport={"width": 1440, "height": 1100})
-    state = {"run": deepcopy(IDLE), "posts": [], "error": None}
+    state = {"run": deepcopy(IDLE), "posts": [], "error": None, "defer_poll": False, "pending_poll": None}
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
 
@@ -78,7 +78,11 @@ def dashboard(browser):
             state["run"]["status"] = "stopped"
             route.fulfill(json=state["run"])
         elif path == "/api/run":
-            route.fulfill(json=state["run"])
+            if state["defer_poll"]:
+                state["pending_poll"] = route
+                state["defer_poll"] = False
+            else:
+                route.fulfill(json=state["run"])
         elif path in ("/", "/static/app.js", "/static/style.css"):
             name = "index.html" if path == "/" else path.rsplit("/", 1)[1]
             mime = {"index.html": "text/html", "app.js": "text/javascript",
@@ -130,6 +134,7 @@ def test_dashboard_completion_tabs_reload_and_review(dashboard):
     page.keyboard.press("ArrowRight")
     playwright.expect(page.get_by_role("tab", name="News")).to_have_attribute("aria-selected", "true")
     playwright.expect(page.locator("#report-content")).to_contain_text("News evidence")
+    page.screenshot(path=str(Path(".thinkrail/context/dashboard-completed.png")), full_page=True)
     page.reload()
     playwright.expect(page.locator("#run-status")).to_have_text("COMPLETED")
     playwright.expect(page.locator("#rating")).to_have_text("Review required")
@@ -164,6 +169,18 @@ def test_dashboard_failed_run_and_safe_text(dashboard):
     playwright.expect(page.locator("#decision-card")).to_be_hidden()
     playwright.expect(page.locator("#downloads")).to_be_hidden()
     playwright.expect(page.locator("#report-content")).to_contain_text("Available evidence.")
+
+
+def test_dashboard_ignores_old_poll_after_new_run(dashboard):
+    page, state = dashboard
+    state["defer_poll"] = True
+    page.wait_for_timeout(1200)
+    assert state["pending_poll"] is not None
+    start(page)
+    state["pending_poll"].fulfill(json=deepcopy(IDLE))
+    page.wait_for_timeout(100)
+    playwright.expect(page.locator("#run-status")).to_have_text("RESEARCHING")
+    playwright.expect(page.locator("#ticker")).to_be_disabled()
 
 
 def test_dashboard_desktop_screenshot(dashboard):
