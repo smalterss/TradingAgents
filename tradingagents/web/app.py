@@ -121,8 +121,7 @@ class RunManager:
         with self.lock:
             self._drain()
             if self.process is not None and not self.process.is_alive():
-                # A dead child has flushed its queue feeder. Drain ALL events before
-                # interpreting death, especially its final completion event.
+                # Queue completion ordering: see tradingagents-web SPEC.
                 self.process.join(timeout=0)
                 self._drain()
                 if self.current["status"] in ACTIVE:
@@ -154,7 +153,6 @@ class RunManager:
     def start(self, selection):
         with self.lock:
             self.refresh()
-            # Completion may arrive just before the child finishes flushing/exiting.
             if self.process is not None or self.current["status"] in ACTIVE:
                 raise HTTPException(409, "An analysis is already active.")
             run_id = uuid.uuid4().hex
@@ -203,14 +201,13 @@ class RunManager:
             self.refresh()
             if self.process is not None:
                 if self.process.is_alive():
-                    # Never join an active producer first: a full pipe could deadlock.
+                    # Termination and queue ownership: see tradingagents-web SPEC.
                     self.process.terminate()
                     self.process.join(timeout=5)
                     if self.process.is_alive():
                         self.process.kill()
                         self.process.join()
-                # A forcibly terminated Queue producer can leave an incomplete frame.
-                # Keep only events drained before termination, never read that pipe again.
+                # Do not read the queue after termination (tradingagents-web SPEC).
                 self._release()
             if self.current["status"] in ACTIVE:
                 self.current.update(status="stopped", downloads=False, rating=None)
@@ -302,8 +299,7 @@ def create_app(*, config=None, context=None):
         except MissingCredentials as exc:
             raise HTTPException(422, str(exc)) from None
         except (ValueError, TypeError):
-            # Validation messages are ours, but the symbol helper includes raw input.
-            # Return only deliberate validation errors, never provider/JSON exception bodies.
+            # Error disclosure policy: see tradingagents-web SPEC.
             raise HTTPException(
                 422, "Invalid run settings. Check ticker, date, analysts, models and round counts."
             ) from None

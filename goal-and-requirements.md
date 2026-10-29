@@ -18,6 +18,7 @@ Audience inference — unconfirmed: researchers and developers studying LLM-assi
 - Support multiple hosted or local model providers, separately configurable reasoning tiers, and configurable evidence vendors.
 - Incorporate caller-supplied holdings, persist decisions and outcome lessons, and optionally recover interrupted analyses.
 - Evaluate independent ticker/date decisions against realized benchmark-relative returns; export shared Markdown and optional self-contained HTML reports.
+- Run a single analysis from a local browser dashboard with environment-based credentials, visible agent progress, stoppable local work, and a readable/downloadable report.
 
 ## Intended scope and implementation gap
 

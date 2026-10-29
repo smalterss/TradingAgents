@@ -68,8 +68,8 @@ def progress(state, selected_analysts=ANALYSTS):
         "sections": sections,
         "stage": stage,
         "analyst_status": {a: "completed" if a in sections else "running" for a in ANALYSTS},
-        # Internal settlement failures can carry vendor exception text. Do not forward it.
-        "memory_note": "Memory settlement note available in the local server report."
+        # Error disclosure policy: see tradingagents-web SPEC.
+        "memory_note": "Past decision memory could not be fully updated or loaded. Research continued; unresolved decisions remain pending."
         if state.get("memory_note")
         else "",
     }
@@ -115,6 +115,6 @@ def execute_run(events, selection, config, report_dir, graph_factory=None):
             {"type": "completed", **progress(final_state, selection["analysts"]), "rating": run_rating(final_state)}
         )
     except Exception as exc:
-        # Exception messages/tracebacks may include API keys, request URLs or response bodies.
+        # Error disclosure policy: see tradingagents-web SPEC.
         LOG.error("Research worker failed (%s)", type(exc).__name__)
         events.put({"type": "failed"})

@@ -41,7 +41,8 @@ def public_config(base, token):
         models = {}
         for options in MODEL_OPTIONS.get(provider, {}).values():
             for label, model in options:
-                models[model] = {"id": model, "label": label}
+                if model != "custom":
+                    models[model] = {"id": model, "label": label}
         providers.append(
             {
                 "id": provider,
@@ -144,7 +145,7 @@ def run_config(base, selection):
     for tier in ("quick", "deep"):
         previous = base.get(f"{tier}_think_provider") or old_primary
         provider = selection[f"{tier}_provider"]
-        # Capture the OLD effective endpoint before aligning the primary tier.
+        # Provider/endpoint inheritance: see tradingagents-web SPEC.
         endpoint = base.get(f"{tier}_think_backend_url")
         if endpoint is None and previous == old_primary:
             endpoint = base.get("backend_url")

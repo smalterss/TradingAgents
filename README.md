@@ -239,6 +239,16 @@ The server binds only to loopback and is intended for one person on their own co
 
 This is a research dashboard, not a brokerage terminal: **no orders are executed**. Historical source coverage can be incomplete, and model output is not guaranteed or financial advice.
 
+Dashboard tests do not call model providers. For the optional browser checks:
+
+```bash
+pip install -e ".[web,dev]" playwright
+python -m playwright install chromium
+pytest tests/test_web.py tests/test_dashboard_contracts.py tests/test_dashboard_browser.py -q
+```
+
+Browser checks use controlled responses and are skipped when Playwright or its Chromium binary is unavailable. The regular backend tests run with the dev extra.
+
 ### Markets and tickers
 
 TradingAgents works with any market Yahoo Finance covers, using the exchange-suffixed ticker. Company identity and the alpha benchmark resolve automatically per market.

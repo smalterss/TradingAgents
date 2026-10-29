@@ -122,7 +122,7 @@ def test_dashboard_setup_start_stop_and_partial_reports(dashboard):
     playwright.expect(page.get_by_role("button", name="Run analysis")).to_be_enabled()
 
 
-def test_dashboard_completion_tabs_reload_and_review(dashboard):
+def test_dashboard_completion_tabs_reload_and_review(dashboard, tmp_path):
     page, state = dashboard
     start(page)
     state["run"].update(status="completed", rating="REVIEW", downloads=True,
@@ -134,14 +134,14 @@ def test_dashboard_completion_tabs_reload_and_review(dashboard):
     page.keyboard.press("ArrowRight")
     playwright.expect(page.get_by_role("tab", name="News")).to_have_attribute("aria-selected", "true")
     playwright.expect(page.locator("#report-content")).to_contain_text("News evidence")
-    page.screenshot(path=str(Path(".thinkrail/context/dashboard-completed.png")), full_page=True)
+    page.screenshot(path=str(tmp_path / "dashboard-completed.png"), full_page=True)
     page.reload()
     playwright.expect(page.locator("#run-status")).to_have_text("COMPLETED")
     playwright.expect(page.locator("#rating")).to_have_text("Review required")
     assert len(state["posts"]) == 1
 
 
-def test_dashboard_validation_failure_and_mobile_layout(dashboard):
+def test_dashboard_validation_failure_and_mobile_layout(dashboard, tmp_path):
     page, state = dashboard
     for checkbox in page.locator('input[name="analyst"]').all():
         checkbox.uncheck()
@@ -155,7 +155,7 @@ def test_dashboard_validation_failure_and_mobile_layout(dashboard):
     playwright.expect(page.locator("#form-error")).to_contain_text("OPENAI_API_KEY")
     page.set_viewport_size({"width": 390, "height": 844})
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
-    page.screenshot(path=str(Path(".thinkrail/context/dashboard-mobile.png")), full_page=True)
+    page.screenshot(path=str(tmp_path / "dashboard-mobile.png"), full_page=True)
 
 
 def test_dashboard_failed_run_and_safe_text(dashboard):
@@ -171,6 +171,17 @@ def test_dashboard_failed_run_and_safe_text(dashboard):
     playwright.expect(page.locator("#report-content")).to_contain_text("Available evidence.")
 
 
+def test_dashboard_reveals_invalid_model_in_collapsed_settings(dashboard):
+    page, state = dashboard
+    page.locator("#ticker").fill("NVDA")
+    page.locator(".model-details summary").click()
+    page.locator("#quick-model").fill("")
+    page.locator(".model-details summary").click()
+    page.locator("#run-button").click()
+    playwright.expect(page.locator("#quick-model")).to_be_visible()
+    assert state["posts"] == []
+
+
 def test_dashboard_ignores_old_poll_after_new_run(dashboard):
     page, state = dashboard
     state["defer_poll"] = True
@@ -183,8 +194,8 @@ def test_dashboard_ignores_old_poll_after_new_run(dashboard):
     playwright.expect(page.locator("#ticker")).to_be_disabled()
 
 
-def test_dashboard_desktop_screenshot(dashboard):
+def test_dashboard_desktop_screenshot(dashboard, tmp_path):
     page, _state = dashboard
-    page.screenshot(path=str(Path(".thinkrail/context/dashboard-desktop.png")), full_page=True)
+    page.screenshot(path=str(tmp_path / "dashboard-desktop.png"), full_page=True)
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
     playwright.expect(page.locator("#run-button")).to_be_enabled()

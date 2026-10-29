@@ -4,8 +4,15 @@ from queue import Queue
 
 import pytest
 
-from tradingagents.web.config import credential_status
+from tradingagents.default_config import build_default_config
+from tradingagents.web.config import credential_status, public_config
 from tradingagents.web.worker import execute_run, progress
+
+
+def test_model_suggestions_never_offer_cli_custom_sentinel():
+    public = public_config(build_default_config(), "test-only-token")
+    assert all(model["id"] != "custom" for provider in public["providers"] for model in provider["models"])
+    assert next(p for p in public["providers"] if p["id"] == "openai_compatible")["models"] == []
 
 
 @pytest.mark.parametrize("ticker,expected", [("BTC-USD", "crypto"), ("0700.HK", "stock")])
@@ -64,6 +71,12 @@ def test_worker_passes_asset_mode_through_checkpoint_lifecycle(tmp_path, ticker,
 ])
 def test_progress_moves_to_next_work_after_completed_outputs(state, stage):
     assert progress(state, ["market"])["stage"] == stage
+
+
+def test_memory_note_is_actionable_without_disclosing_provider_text():
+    note = progress({"memory_note": "Provider failed at https://secret?api_key=PRIVATE"})["memory_note"]
+    assert "could not be fully updated or loaded" in note
+    assert "PRIVATE" not in note and "https://" not in note
 
 
 def test_bedrock_does_not_reject_implicit_credential_chain(monkeypatch):

@@ -309,6 +309,15 @@ async function refresh() {
   }
 }
 
+form.addEventListener(
+  "invalid",
+  (event) => {
+    const details = event.target.closest("details");
+    if (details) details.open = true;
+  },
+  true,
+);
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (busy || !config || runningStates.has(snapshot?.status)) return;
