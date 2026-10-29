@@ -18,6 +18,7 @@ so that:
 
 from __future__ import annotations
 
+import re
 from enum import StrEnum
 from typing import Literal
 
@@ -259,6 +260,33 @@ class PortfolioDecision(BaseModel):
         description="Optional recommended holding period, e.g. '3-6 months'.",
     )
 
+    buy_notional_usd: float | None = Field(
+        default=None,
+        gt=0,
+        allow_inf_nan=False,
+        description=(
+            "Optional Buy amount in USD as a finite positive number, only for a "
+            "Buy rating when available cash is known. Choose the amount based on "
+            "the evidence and cash, with no margin; explain it in executive_summary. "
+            "Omit when cash is unknown or the rating is not Buy. Never use prose, "
+            "currency symbols, or percentages."
+        ),
+    )
+
+    @field_validator("buy_notional_usd", mode="before")
+    @classmethod
+    def _validate_buy_notional(cls, value):
+        # Unlike display-only price targets, order sizing must never be salvaged
+        # from formatted prices, percentages, or prose.
+        if isinstance(value, bool):
+            raise ValueError("Buy notional must be a numeric USD amount, not a boolean")
+        if isinstance(value, str) and not re.fullmatch(
+            r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?",
+            value.strip(),
+        ):
+            raise ValueError("Buy notional must be a plain numeric USD amount")
+        return value
+
     @field_validator("price_target", mode="before")
     @classmethod
     def _nullish_float_to_none(cls, v):
@@ -280,6 +308,8 @@ def render_pm_decision(decision: PortfolioDecision) -> str:
         "",
         f"**Investment Thesis**: {decision.investment_thesis}",
     ]
+    if decision.rating == PortfolioRating.BUY and decision.buy_notional_usd is not None:
+        parts.extend(["", f"**Recommended Buy Amount USD**: {decision.buy_notional_usd}"])
     # Named even when absent: a missing line reads as a field nobody asked for,
     # so a reader cannot tell "no target" from "target not reported".
     target = decision.price_target if decision.price_target is not None else "not provided"

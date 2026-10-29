@@ -16,7 +16,7 @@ from tradingagents.agents.context import (
     get_portfolio_context_from_state,
 )
 from tradingagents.agents.rating import parse_rating
-from tradingagents.agents.schemas import PortfolioDecision, render_pm_decision
+from tradingagents.agents.schemas import PortfolioDecision, PortfolioRating, render_pm_decision
 from tradingagents.agents.structured import NO_EXTERNAL_TOOLS, bind_structured, invoke_structured
 
 
@@ -73,14 +73,25 @@ Write these sections, in this order, starting with the rating on its own line:
 - **Executive Summary**: the call and how to act on it
 - **Investment Thesis**: the evidence that decided it, and what would change it
 
+For a Buy rating only, when available cash is known, choose a positive finite USD
+Buy amount in the structured buy_notional_usd field. Base the amount on the
+portfolio context and conviction, without a fixed per-stock cap. Do not use
+margin or exceed available cash. Explain the chosen amount in executive_summary.
+When cash is unknown or the rating is not Buy, omit buy_notional_usd (null).
+Do not express this numeric field as prose, currency-formatted text, or a percentage.
+
 {NO_EXTERNAL_TOOLS}{get_language_instruction()}"""
 
         # The typed rating is the decision; the rendered text only carries it.
         # Read back from text, a rating the thesis quotes could replace it.
         decision = invoke_structured(structured_llm, prompt, "Portfolio Manager")
-        if decision is not None:
+        portfolio_decision_structured = isinstance(decision, PortfolioDecision)
+        buy_notional_usd = None
+        if portfolio_decision_structured:
             final_trade_decision = render_pm_decision(decision)
             final_rating = decision.rating.value
+            if decision.rating == PortfolioRating.BUY:
+                buy_notional_usd = decision.buy_notional_usd
         else:
             final_trade_decision = llm.invoke(prompt).content
             final_rating = parse_rating(final_trade_decision)
@@ -102,6 +113,8 @@ Write these sections, in this order, starting with the rating on its own line:
             "portfolio_context": portfolio_context,
             "final_trade_decision": final_trade_decision,
             "final_rating": final_rating,
+            "portfolio_decision_structured": portfolio_decision_structured,
+            "buy_notional_usd": buy_notional_usd,
         }
 
     return portfolio_manager_node
