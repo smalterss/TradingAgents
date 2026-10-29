@@ -55,8 +55,11 @@ def load_alpaca_portfolio() -> PortfolioContext:
                     quantity=-quantity if side == "short" else quantity,
                     average_price=holding["avg_entry_price"],
                 ))
+            currency = account["currency"]
+            if not isinstance(currency, str) or not currency.strip():
+                raise ValueError("invalid account currency")
             return PortfolioContext(
-                cash=account["cash"], currency=account["currency"], positions=positions
+                cash=float(account["cash"]), currency=currency, positions=positions
             )
     except Exception:
         raise AlpacaPortfolioError(

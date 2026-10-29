@@ -23,6 +23,8 @@ Run input permits a safe normalized ticker, canonical non-future date, nonempty 
 
 A server-owned lock serializes admission, event collection, stop and current report lookup. One spawn worker runs at a time; a completion event cannot admit another run until that process has exited. The current state survives browser reload while the server lives, not server restart. Starting a new run replaces the current view; generated reports remain in unique server-owned directories, without a history-browsing API.
 
+The worker resolves automatic portfolio context under `tradingagents-package` before creating the graph, then uses the same snapshot for state and checkpoint lifecycle. Alpaca failures cross the process boundary only as a controlled reason code; the browser renders an actionable fixed summary. There is no browser credential entry or portfolio editor.
+
 The worker uses the graph's streaming and shared recovery/recording/export lifecycle. Only allowlisted report text and public progress cross the process boundary. Stages derive from observed report outputs rather than invented completion percentages. Browser polling preserves a selected report tab and discards responses from before a run mutation so an old idle/running snapshot cannot undo start/stop feedback.
 
 ## Stop, failure and completion

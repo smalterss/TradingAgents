@@ -191,6 +191,9 @@ def test_transport_and_json_errors_are_sanitized(credentials, session, failure, 
     {"cash": "NaN", "currency": "USD"},
     {"cash": "Infinity", "currency": "USD"},
     {"cash": "1"},
+    {"cash": None, "currency": "USD"},
+    {"cash": "1", "currency": None},
+    {"cash": "1", "currency": "  "},
 ])
 def test_malformed_account_is_sanitized(credentials, session, account):
     session.get.side_effect = [response(account), response([])]

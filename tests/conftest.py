@@ -25,6 +25,9 @@ def _blank_settings_overlay():
 
 
 _blank_settings_overlay()
+# Broker credentials must not activate account access during ordinary unit tests.
+for _name in ("ALPACA_API_KEY", "ALPACA_API_SECRET", "APCA_API_KEY_ID", "APCA_API_SECRET_KEY"):
+    os.environ[_name] = ""
 
 
 def _own_file_locations():

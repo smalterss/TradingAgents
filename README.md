@@ -343,7 +343,11 @@ It covers companies that file with the SEC, including foreign companies listed i
 
 ### Current holdings
 
-By default the agents do not know what you hold, so their guidance is written for a reader who applies it to their own position. Pass a portfolio to have the trader, the risk analysts and the portfolio manager work against your actual book.
+Without portfolio input or Alpaca credentials, the agents do not know what you hold. Pass a portfolio to have the trader, the risk analysts and the portfolio manager work against your actual book.
+
+**Alpaca paper account (read-only):** set `ALPACA_API_KEY` and `ALPACA_API_SECRET` in your environment or local `.env` (the standard `APCA_API_KEY_ID` / `APCA_API_SECRET_KEY` names are also supported). CLI, dashboard and Python analyses automatically fetch cash and open positions once per run. Credentials are never sent to the models; no orders are submitted. Restart an already-running dashboard after changing its environment.
+
+Automatic fetching is enabled when credentials are present. Set `TRADINGAGENTS_ALPACA_PORTFOLIO_ENABLED=false` (or `config["alpaca_portfolio_enabled"] = False`) to disable it. An explicitly supplied portfolio always takes precedence. Fetch failures stop analysis; current holdings are only fetched for today's New York date. Past-date analyses require an explicit portfolio or disabling Alpaca context. Backtest grids do not fetch Alpaca holdings. Cash is the account cash balance, not leveraged buying power.
 
 ```python
 from tradingagents.portfolio import PortfolioContext

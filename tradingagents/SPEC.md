@@ -20,6 +20,10 @@ Backtesting invokes the graph and reads its isolated memory log. Reporting consu
 
 A portfolio is validated, broker-neutral context: finite numeric holdings and cash, signed quantities, and a currency label. Missing context, an explicit flat book, and an existing position are distinct. Aliases match the analyzed instrument without rewriting the caller's holding spellings. A fingerprint distinguishes changed books for recovery.
 
+The package can read Alpaca paper-account cash, currency and open positions into this same broker-neutral context. Environment credential presence enables automatic snapshots by default; the typed `alpaca_portfolio_enabled` configuration / `TRADINGAGENTS_ALPACA_PORTFOLIO_ENABLED` override disables them. Explicit caller portfolios take precedence. Each CLI, browser or Python analysis resolves one snapshot before state creation and checkpoint identity. Fetch or validation failure stops the analysis rather than inventing a flat book. Cash means account cash, not margin buying power; short quantities are signed negative.
+
+Only fixed paper-API GET requests are permitted, with bounded timeouts, redirects rejected and sanitized errors. Credentials stay in environment/request headers, never configuration, agent state, prompts or reports. Credential names are `ALPACA_API_KEY` / `ALPACA_API_SECRET`, with `APCA_API_KEY_ID` / `APCA_API_SECRET_KEY` aliases. Automatic snapshots require today's New York date: other dates require explicit context or disabling the integration, avoiding current holdings masquerading as historical data. Backtest grids never auto-fetch broker holdings.
+
 User-confirmed limit: the framework does not reconcile balances, translate currencies, or update holdings after a decision. A portfolio is not an executable order or account ledger.
 
 ## Evaluation

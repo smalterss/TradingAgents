@@ -16,7 +16,7 @@ Audience inference — unconfirmed: researchers and developers studying LLM-assi
 - Analyze an instrument on a specified non-future date using selected technical, fundamentals, news, and sentiment analysts, followed by research and risk debates.
 - Produce narrative reports and a canonical investment rating, with explicit review-required output when no reliable rating can be read.
 - Support multiple hosted or local model providers, separately configurable reasoning tiers, and configurable evidence vendors.
-- Incorporate caller-supplied holdings, persist decisions and outcome lessons, and optionally recover interrupted analyses.
+- Incorporate caller-supplied holdings or read-only Alpaca paper-account context, persist decisions and outcome lessons, and optionally recover interrupted analyses.
 - Evaluate independent ticker/date decisions against realized benchmark-relative returns; export shared Markdown and optional self-contained HTML reports.
 - Run a single analysis from a local browser dashboard with environment-based credentials, visible agent progress, stoppable local work, and a readable/downloadable report.
 
