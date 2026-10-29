@@ -1,7 +1,7 @@
 ---
 id: tradingagents-goals
 type: goal-and-requirements
-status: draft
+status: active
 title: TradingAgents purpose and scope
 ---
 

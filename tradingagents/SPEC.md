@@ -1,7 +1,7 @@
 ---
 id: tradingagents-package
 type: module-design
-status: draft
+status: active
 title: Research package and shared application contracts
 parent: tradingagents-architecture
 ---

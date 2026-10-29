@@ -1,7 +1,7 @@
 ---
 id: tradingagents-dataflows
 type: submodule-design
-status: draft
+status: active
 title: Market evidence and knowledge-time boundaries
 parent: tradingagents-package
 ---

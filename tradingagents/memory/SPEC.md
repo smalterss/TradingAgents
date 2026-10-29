@@ -1,7 +1,7 @@
 ---
 id: tradingagents-memory
 type: submodule-design
-status: draft
+status: active
 title: Decision memory and realized outcomes
 parent: tradingagents-package
 depends-on: [tradingagents-dataflows, tradingagents-agents]

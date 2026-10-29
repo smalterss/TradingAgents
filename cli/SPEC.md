@@ -1,7 +1,7 @@
 ---
 id: tradingagents-cli
 type: module-design
-status: draft
+status: active
 title: Interactive and unattended terminal application
 parent: tradingagents-architecture
 depends-on: [tradingagents-package, tradingagents-graph, tradingagents-llm]

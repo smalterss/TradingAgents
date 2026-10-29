@@ -1,7 +1,7 @@
 ---
 id: tradingagents-architecture
 type: architecture-design
-status: draft
+status: active
 title: TradingAgents system architecture
 parent: tradingagents-goals
 ---

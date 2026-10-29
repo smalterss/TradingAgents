@@ -1,7 +1,7 @@
 ---
 id: tradingagents-agents
 type: submodule-design
-status: draft
+status: active
 title: Evidence-based agent decisions
 parent: tradingagents-package
 depends-on: [tradingagents-dataflows]

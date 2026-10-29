@@ -1,7 +1,7 @@
 ---
 id: tradingagents-llm
 type: submodule-design
-status: draft
+status: active
 title: Provider adaptation and authentication
 parent: tradingagents-package
 ---

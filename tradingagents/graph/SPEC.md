@@ -1,7 +1,7 @@
 ---
 id: tradingagents-graph
 type: submodule-design
-status: draft
+status: active
 title: Run orchestration and recovery
 parent: tradingagents-package
 depends-on: [tradingagents-agents, tradingagents-dataflows, tradingagents-llm, tradingagents-memory]
