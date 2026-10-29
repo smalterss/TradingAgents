@@ -15,6 +15,8 @@ Define specialist role prompts, state and structured decision schemas, instrumen
 
 Research and portfolio managers use Buy, Overweight, Hold, Underweight, or Sell. The trader proposes Buy, Hold, or Sell; its transaction direction is not a replacement for the final investment rating. Prose remains the artifact read by users and downstream roles. Structured manager/trader schemas render back to that narrative form; unsupported binding or failed structured invocation falls back to ordinary text generation.
 
+The Portfolio Manager may propose `buy_notional_usd` as a strict positive finite USD number for a Buy when cash is known; it explains the amount in the decision text. It has no fixed per-stock cap, but must not propose margin or exceed supplied cash. Its output marks typed-decision provenance and clears sizing on text fallback or non-Buy decisions. This proposal is not authorization or a broker validation: execution safeguards belong to `tradingagents-package`, and roles themselves never submit orders.
+
 An absent or ambiguous final rating yields `REVIEW`, not Hold. `REVIEW` is non-tradeable and callers must guard it before converting to the rating enum. Deterministic parsing favors the decision's own explicit rating over quoted opposing calls; mere rating words in prose are not a decision.
 
 ## Evidence and context

@@ -187,7 +187,12 @@ class RunManager:
                     "title": TITLES["overview"],
                     "html": render_markdown(
                         f"## {selection['ticker']} · {selection['trade_date']}\n\n"
-                        "Investment research only. No trades are executed."
+                        + (
+                            "Paper automation is enabled. Eligible current-day Buy/Sell decisions may submit "
+                            "simulated Alpaca orders; live trading is disabled. Submission is not a fill."
+                            if self.base.get("alpaca_paper_execution_enabled") is True
+                            else "Investment research only. No trades are executed."
+                        )
                     ),
                 }
             }

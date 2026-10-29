@@ -108,6 +108,23 @@ def client(base):
         yield client
 
 
+@pytest.mark.parametrize("enabled", [True, False])
+def test_overview_discloses_execution_mode(base, selection, enabled):
+    from tradingagents.web.app import RunManager
+
+    base["alpaca_paper_execution_enabled"] = enabled
+    manager = RunManager(base, context=FakeContext())
+    manager.start(selection)
+    html = manager.snapshot()["sections"][0]["html"]
+    if enabled:
+        assert "Paper automation is enabled" in html
+        assert "No trades are executed" not in html
+        assert "live trading is disabled" in html
+    else:
+        assert "No trades are executed" in html
+    manager.stop()
+
+
 def headers(client):
     return {
         "Origin": "http://127.0.0.1:8000",
