@@ -23,7 +23,7 @@ Run dates must be canonical `YYYY-MM-DD` and no later than today. Instrument ide
 
 Opt-in SQLite checkpoints are per ticker. Thread identity includes date, graph layout, analyst selection, asset mode, portfolio fingerprint and output-affecting settings. Storage locations, checkpoint enablement and retry budget do not alter that signature. Changed effective inputs start fresh; a compatible interrupted thread resumes with `None` input rather than appending initial messages again.
 
-Successful completion records the decision and clears its checkpoint; interruption preserves recoverable progress. Checkpointer resources are released and the plain graph restored. Both `propagate` and CLI streaming must share state creation, recovery, recording, and cleanup semantics.
+Successful completion records the decision and clears its checkpoint; interruption preserves recoverable progress. Checkpointer resources are released and the plain graph restored. `propagate`, CLI streaming and the local browser worker share state creation, recovery, recording, and cleanup semantics. Forced browser-worker termination is owned by `tradingagents-web` and cannot promise graceful completion of an in-flight provider request.
 
 ## Boundary
 

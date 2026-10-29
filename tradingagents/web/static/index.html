@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta
+      name="description"
+      content="A local workspace for multi-agent financial research. No trades are executed."
+    />
+    <title>TradingAgents — Research workspace</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#workspace">Skip to research workspace</a>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="TradingAgents home">
+        <span class="brand-mark" aria-hidden="true">TA<span>↗</span></span>
+        <span
+          >Trading<span class="brand-light">Agents</span
+          ><small>RESEARCH WORKSPACE</small></span
+        >
+      </a>
+      <div class="topbar-right">
+        <span class="local-indicator"><i></i> LOCAL SESSION</span
+        ><span class="research-badge">RESEARCH ONLY</span>
+      </div>
+    </header>
+
+    <main class="app-layout">
+      <aside class="setup-panel" aria-labelledby="setup-heading">
+        <div class="panel-heading">
+          <span class="eyebrow">01 / CONFIGURE</span>
+          <h1 id="setup-heading">
+            A better-informed<br />
+            point of view.
+          </h1>
+          <p>One instrument. Multiple perspectives.</p>
+        </div>
+        <form id="analysis-form">
+          <fieldset id="setup-fields" disabled>
+            <div class="field">
+              <label for="ticker">Instrument <span>YAHOO SYMBOL</span></label
+              ><input
+                id="ticker"
+                name="ticker"
+                placeholder="e.g. NVDA, 0700.HK, BTC-USD"
+                autocomplete="off"
+                maxlength="40"
+                required
+              />
+              <p class="field-note">
+                Exchange suffixes and crypto pairs supported.
+              </p>
+            </div>
+            <div class="field">
+              <label for="trade-date">Analysis date</label
+              ><input id="trade-date" name="trade_date" type="date" required />
+              <p class="field-note">
+                Historical coverage varies by data source.
+              </p>
+            </div>
+            <div class="field">
+              <div class="label-row">
+                <span id="analysts-label">Analyst team</span
+                ><span id="analyst-count">4 SELECTED</span>
+              </div>
+              <div
+                class="analyst-options"
+                role="group"
+                aria-labelledby="analysts-label"
+              >
+                <label class="analyst-option"
+                  ><input
+                    type="checkbox"
+                    name="analyst"
+                    value="market"
+                    checked
+                  /><span class="analyst-icon" aria-hidden="true">⌁</span
+                  ><span>Market<small>Prices & technicals</small></span
+                  ><span class="check-mark" aria-hidden="true">✓</span></label
+                >
+                <label class="analyst-option"
+                  ><input
+                    type="checkbox"
+                    name="analyst"
+                    value="social"
+                    checked
+                  /><span class="analyst-icon" aria-hidden="true">◎</span
+                  ><span>Sentiment<small>Social signals</small></span
+                  ><span class="check-mark" aria-hidden="true">✓</span></label
+                >
+                <label class="analyst-option"
+                  ><input
+                    type="checkbox"
+                    name="analyst"
+                    value="news"
+                    checked
+                  /><span class="analyst-icon" aria-hidden="true">≡</span
+                  ><span>News<small>Events & macro</small></span
+                  ><span class="check-mark" aria-hidden="true">✓</span></label
+                >
+                <label class="analyst-option"
+                  ><input
+                    type="checkbox"
+                    name="analyst"
+                    value="fundamentals"
+                    checked
+                  /><span class="analyst-icon" aria-hidden="true">▥</span
+                  ><span>Fundamentals<small>Financial statements</small></span
+                  ><span class="check-mark" aria-hidden="true">✓</span></label
+                >
+              </div>
+            </div>
+            <details class="model-details">
+              <summary>
+                <span
+                  >Model configuration<small id="model-summary"
+                    >Loading model settings…</small
+                  ></span
+                ><span aria-hidden="true">⌄</span>
+              </summary>
+              <div class="tier-heading">
+                <span class="tier-dot"></span> Quick thinking
+                <small>Analysts, researchers & trader</small>
+              </div>
+              <div class="field compact">
+                <label for="quick-provider">Provider</label
+                ><select id="quick-provider" required></select>
+              </div>
+              <div class="field compact">
+                <label for="quick-model">Model ID</label
+                ><input
+                  id="quick-model"
+                  placeholder="Enter a model ID"
+                  list="quick-models"
+                  maxlength="200"
+                  required
+                  autocomplete="off"
+                /><datalist id="quick-models"></datalist>
+              </div>
+              <p id="quick-hint" class="credential-hint"></p>
+              <div class="tier-heading deep">
+                <span class="tier-dot"></span> Deep thinking
+                <small>Research & portfolio managers</small>
+              </div>
+              <div class="field compact">
+                <label for="deep-provider">Provider</label
+                ><select id="deep-provider" required></select>
+              </div>
+              <div class="field compact">
+                <label for="deep-model">Model ID</label
+                ><input
+                  id="deep-model"
+                  placeholder="Enter a model ID"
+                  list="deep-models"
+                  maxlength="200"
+                  required
+                  autocomplete="off"
+                /><datalist id="deep-models"></datalist>
+              </div>
+              <p id="deep-hint" class="credential-hint"></p>
+            </details>
+            <details class="advanced-details">
+              <summary>
+                Research settings <span aria-hidden="true">+</span>
+              </summary>
+              <div class="field">
+                <label for="language">Report language</label
+                ><input id="language" maxlength="80" value="English" required />
+              </div>
+              <div class="two-fields">
+                <div class="field">
+                  <label for="debate-rounds">Research rounds</label
+                  ><input
+                    id="debate-rounds"
+                    type="number"
+                    min="1"
+                    max="10"
+                    value="1"
+                    required
+                  />
+                </div>
+                <div class="field">
+                  <label for="risk-rounds">Risk rounds</label
+                  ><input
+                    id="risk-rounds"
+                    type="number"
+                    min="1"
+                    max="10"
+                    value="1"
+                    required
+                  />
+                </div>
+              </div>
+            </details>
+          </fieldset>
+          <p id="form-error" class="error-message" role="alert" hidden></p>
+          <button id="run-button" class="primary-button" type="submit" disabled>
+            <span>Run analysis</span><span aria-hidden="true">↗</span>
+          </button>
+          <button id="stop-button" class="stop-button" type="button" hidden>
+            ■ Stop analysis
+          </button>
+          <p class="spend-note">
+            Uses your configured providers. Model calls may incur charges.
+            Stopping cannot recall requests already accepted.
+          </p>
+        </form>
+      </aside>
+
+      <section
+        id="workspace"
+        class="workspace"
+        aria-label="Research results"
+        tabindex="-1"
+      >
+        <div class="workspace-heading">
+          <div>
+            <span class="eyebrow">02 / RESEARCH</span>
+            <h2 id="workspace-title">The research desk</h2>
+            <p id="workspace-subtitle">Your next perspective starts here.</p>
+          </div>
+          <div class="run-meta">
+            <span id="run-status" class="status-pill" role="status"
+              >CONNECTING</span
+            ><span id="elapsed" class="elapsed">—</span>
+          </div>
+        </div>
+        <div
+          id="connection-error"
+          class="notice error-notice"
+          role="alert"
+          hidden
+        ></div>
+        <section class="pipeline-card" aria-labelledby="pipeline-heading">
+          <div class="card-label">
+            <h3 id="pipeline-heading">AGENT PIPELINE</h3>
+            <span id="pipeline-caption"
+              >Evidence first. Conviction second.</span
+            >
+          </div>
+          <ol class="pipeline">
+            <li data-stage="analysts">
+              <span class="stage-number">01</span><strong>Analysts</strong
+              ><span class="stage-detail">Gather evidence</span>
+            </li>
+            <li data-stage="research">
+              <span class="stage-number">02</span><strong>Research</strong
+              ><span class="stage-detail">Debate the case</span>
+            </li>
+            <li data-stage="trader">
+              <span class="stage-number">03</span><strong>Trader</strong
+              ><span class="stage-detail">Build a proposal</span>
+            </li>
+            <li data-stage="risk">
+              <span class="stage-number">04</span><strong>Risk review</strong
+              ><span class="stage-detail">Challenge the thesis</span>
+            </li>
+            <li data-stage="decision">
+              <span class="stage-number">05</span><strong>Decision</strong
+              ><span class="stage-detail">Weigh the evidence</span>
+            </li>
+          </ol>
+          <div
+            id="analyst-progress"
+            class="analyst-progress"
+            aria-label="Analyst progress"
+          ></div>
+        </section>
+
+        <div id="run-notice" class="notice" role="status" hidden></div>
+        <section
+          id="decision-card"
+          class="decision-card"
+          aria-label="Final research decision"
+          hidden
+        >
+          <div>
+            <span class="eyebrow">FINAL RESEARCH RATING</span>
+            <h3 id="rating">—</h3>
+            <p>An investment perspective, not an executed order.</p>
+          </div>
+          <span class="decision-mark" aria-hidden="true">↗</span>
+        </section>
+        <p id="memory-note" class="notice memory-note" hidden></p>
+
+        <section
+          id="empty-state"
+          class="empty-state"
+          aria-labelledby="empty-heading"
+        >
+          <div class="orbit-illustration" aria-hidden="true">
+            <div class="orbit orbit-one"></div>
+            <div class="orbit orbit-two"></div>
+            <span class="orbit-node node-one">⌁</span
+            ><span class="orbit-node node-two">◎</span
+            ><span class="orbit-node node-three">▥</span
+            ><span class="orbit-center">TA<span>↗</span></span>
+          </div>
+          <span class="eyebrow">MANY PERSPECTIVES. ONE THESIS.</span>
+          <h2 id="empty-heading">
+            Let the evidence<br />lead the conversation.
+          </h2>
+          <p>
+            Assemble your analyst team and start a run.<br />Their reports,
+            debates, and final decision will appear here.
+          </p>
+          <div class="empty-principles">
+            <span><i></i> Real market evidence</span
+            ><span><i></i> Opposing viewpoints</span
+            ><span><i></i> Explicit risk review</span>
+          </div>
+        </section>
+
+        <section
+          id="reports-card"
+          class="reports-card"
+          aria-labelledby="reports-heading"
+          hidden
+        >
+          <div class="report-toolbar">
+            <div>
+              <span class="eyebrow">RESEARCH OUTPUT</span>
+              <h3 id="reports-heading">The full picture</h3>
+            </div>
+            <div id="downloads" class="downloads" hidden>
+              <a href="/api/reports/markdown" download>↓ Markdown</a
+              ><a href="/api/reports/html" download>↓ HTML</a>
+            </div>
+          </div>
+          <div
+            id="report-tabs"
+            class="report-tabs"
+            role="tablist"
+            aria-label="Report sections"
+          ></div>
+          <article
+            id="report-content"
+            class="report-content"
+            role="tabpanel"
+            tabindex="0"
+          ></article>
+        </section>
+        <footer class="workspace-footer">
+          <span
+            >TRADINGAGENTS <span class="footer-divider">/</span> LOCAL
+            RESEARCH</span
+          >
+          <p>
+            Research only. Not financial advice. Historical coverage may be
+            incomplete; model outputs and returns are not guaranteed.
+          </p>
+        </footer>
+      </section>
+    </main>
+  </body>
+</html>

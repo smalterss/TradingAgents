@@ -12,7 +12,7 @@ Expose the research framework and shared application contracts independently of 
 
 ## Internal dependency edges
 
-`tradingagents-graph` composes `tradingagents-agents`, `tradingagents-dataflows`, `tradingagents-llm`, and `tradingagents-memory`. Agents reach market evidence through dataflows. Memory uses dataflows for outcome prices and agent rating vocabulary for decision tags; its reflector consumes an injected model rather than creating providers. Model adapters do not orchestrate agent roles.
+`tradingagents-graph` composes `tradingagents-agents`, `tradingagents-dataflows`, `tradingagents-llm`, and `tradingagents-memory`. Agents reach market evidence through dataflows. Memory uses dataflows for outcome prices and agent rating vocabulary for decision tags; its reflector consumes an injected model rather than creating providers. Model adapters do not orchestrate agent roles. `tradingagents-web` uses the graph lifecycle, model metadata and credential-name mapping, symbol helpers, and shared reports without importing terminal presentation; its server and worker boundary is owned by that spec.
 
 Backtesting invokes the graph and reads its isolated memory log. Reporting consumes final state and shared rating vocabulary, not live providers. Portfolio validation uses data-layer symbol normalization. Child modules may use these shared helpers; they must not depend on CLI presentation.
 

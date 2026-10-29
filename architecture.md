@@ -8,9 +8,9 @@ parent: tradingagents-goals
 
 ## System shape
 
-Python 3.11+ hosts a LangGraph workflow, LangChain model adapters, vendor-backed evidence retrieval, and local persistence. The terminal application and Python API expose the same research pipeline. This graph describes the implementation inspected during import; inferred intent remains unconfirmed until review.
+Python 3.11+ hosts a LangGraph workflow, LangChain model adapters, vendor-backed evidence retrieval, and local persistence. The terminal application, Python API and optional local browser dashboard expose the same research pipeline. This graph describes the implementation inspected during import; inferred intent remains unconfirmed until review.
 
-`tradingagents-package` owns application-level evaluation, portfolio input, and report contracts. Its child specs define the evidence, model, agent, memory, and orchestration boundaries. `tradingagents-cli` is a separate presentation and configuration adapter, not a second research engine.
+`tradingagents-package` owns application-level evaluation, portfolio input, and report contracts. Its child specs define the evidence, model, agent, memory, and orchestration boundaries. `tradingagents-cli` is a separate presentation and configuration adapter, not a second research engine. `tradingagents-web` is the package's loopback-only browser adapter, served by optional FastAPI/Uvicorn dependencies with bundled assets rather than a separate JavaScript build. It owns process-isolated browser jobs, not a new investment engine.
 
 ## Cross-cutting contracts
 
