@@ -21,7 +21,7 @@ An absent or ambiguous final rating yields `REVIEW`, not Hold. `REVIEW` is non-t
 
 Model-facing tools hide run ticker/date fields from model schemas and obtain them from injected state. Date arguments cannot extend beyond the run cutoff. Exact price/indicator claims are grounded in retrieved evidence; downstream structured agents are instructed to use provided evidence and not call external search tools. Prompt instructions are not a guarantee of model factuality.
 
-Holdings context reaches trader, risk roles and portfolio manager rather than the research team's directional debate. Output reports may use the configured language while internal debate stays English. Optional Jev screening filters off-company social posts and supplies stance counts; without configured credentials posts pass through unscreened.
+Holdings context reaches trader, risk roles and portfolio manager rather than the research team's directional debate. The configured output language also applies to researcher and risk-debater responses stored in debate history; machine-readable rating labels and values remain English. This implemented behavior, covered by `tests/test_i18n_coverage.py`, differs from the default-config comment claiming internal debate stays English. Optional Jev screening filters off-company social posts and supplies stance counts; without configured credentials posts pass through unscreened.
 
 ## Boundary
 
