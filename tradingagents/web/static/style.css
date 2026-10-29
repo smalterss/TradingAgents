@@ -829,6 +829,9 @@ summary small {
 }
 .summary-panel > h3 { margin: 0 0 12px; font-size: 17px; }
 .summary-caption { color: var(--muted); font-size: 13px; }
+.paper-execution { margin: 16px 0 24px; }
+.paper-execution > h3 { margin-top: 12px; }
+.paper-execution .report-content { padding: 0; min-height: 0; }
 .summary-panel .report-content { padding: 0; min-height: 0; overflow-wrap: anywhere; }
 @media (max-width: 760px) {
   .manager-summary { grid-template-columns: 1fr; }

@@ -54,6 +54,7 @@ def public_config(base, token):
         )
     return {
         "csrf_token": token,
+        "paper_execution_enabled": base.get("alpaca_paper_execution_enabled") is True,
         "providers": providers,
         "defaults": {
             "ticker": "",

@@ -85,6 +85,9 @@ _SECTIONS = (
         ("Portfolio Context", "context.md", ("portfolio_context",)),
         ("Portfolio Manager", "decision.md", ("final_trade_decision",)),
     )),
+    ("VI. Alpaca Paper Execution", "6_paper_execution", (
+        ("Paper Order Outcome", "execution.md", ("paper_execution_report",)),
+    )),
 )
 
 

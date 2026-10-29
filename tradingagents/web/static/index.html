@@ -24,7 +24,7 @@
       </a>
       <div class="topbar-right">
         <span class="local-indicator"><i></i> LOCAL SESSION</span
-        ><span class="research-badge">RESEARCH ONLY</span>
+        ><span id="execution-mode" class="research-badge">RESEARCH ONLY</span>
       </div>
     </header>
 
@@ -38,6 +38,7 @@
           </h1>
           <p>One instrument. Multiple perspectives.</p>
         </div>
+        <p id="paper-automation-notice" class="notice" hidden></p>
         <form id="analysis-form">
           <fieldset id="setup-fields" disabled>
             <div class="field">
@@ -280,7 +281,7 @@
           <div>
             <span class="eyebrow">FINAL RESEARCH RATING</span>
             <h3 id="rating">—</h3>
-            <p>An investment perspective, not an executed order.</p>
+            <p>Research rating. Any paper order is reported separately below.</p>
           </div>
           <span class="decision-mark" aria-hidden="true">↗</span>
         </section>
@@ -294,6 +295,12 @@
             <h3>Manager’s recommendation</h3>
             <article id="manager-recommendation" class="report-content" aria-label="Manager recommendation"></article>
           </div>
+        </section>
+        <section id="paper-execution" class="summary-panel paper-execution" aria-label="Alpaca paper order outcome" hidden>
+          <span class="eyebrow">SIMULATED ACCOUNT · NEVER LIVE TRADING</span>
+          <h3>Paper order outcome</h3>
+          <article id="paper-execution-content" class="report-content"></article>
+          <p class="summary-caption">Submitted does not mean filled. Stopping a run cannot recall an order already submitted.</p>
         </section>
         <p id="memory-note" class="notice memory-note" hidden></p>
 

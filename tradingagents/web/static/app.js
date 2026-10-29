@@ -85,6 +85,10 @@ function countAnalysts() {
 
 function configure(data) {
   config = data;
+  $("execution-mode").textContent = data.paper_execution_enabled ? "PAPER AUTO ON" : "RESEARCH ONLY";
+  message("paper-automation-notice", data.paper_execution_enabled
+    ? "Paper automation is ON. Current-day US-stock Buy/Sell decisions may submit simulated orders. No live trades."
+    : "");
   const defaults = data.defaults;
   $("ticker").value = defaults.ticker || "";
   $("trade-date").value = defaults.trade_date;
@@ -274,7 +278,8 @@ function render(next) {
       "Analysis failed. Check your local provider configuration and try again. Any available reports below are incomplete.";
   if (next.status === "stopped")
     notice =
-      "Analysis stopped. Available sections below are partial—not a final decision. Requests already accepted by a provider may still incur charges.";
+      "Analysis stopped. Available sections below are partial—not a final decision. Requests already accepted by a provider may still incur charges."
+      + (config?.paper_execution_enabled ? " A paper order may already have been submitted; check Alpaca before another run." : "");
   message("run-notice", notice);
   $("run-notice").classList.toggle("error-notice", next.status === "failed");
   const completed = next.status === "completed";
@@ -294,6 +299,9 @@ function render(next) {
       ? (key === "portfolio" ? "Portfolio input was not recorded for this run." : "No manager recommendation was recorded.")
       : "";
   }
+  $("paper-execution").hidden = !(completed && next.paper_execution);
+  if (completed && next.paper_execution) $("paper-execution-content").innerHTML = next.paper_execution;
+  else $("paper-execution-content").replaceChildren();
   message("memory-note", next.memory_note);
   reports();
   controls();

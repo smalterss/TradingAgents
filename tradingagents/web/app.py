@@ -60,6 +60,7 @@ def idle_snapshot():
         "analyst_status": dict.fromkeys(ANALYSTS, "pending"),
         "rating": None,
         "manager_summary": None,
+        "paper_execution": None,
         "error": None,
         "memory_note": "",
         "downloads": False,
@@ -118,6 +119,10 @@ class RunManager:
                         for key in ("portfolio", "recommendation")
                         if isinstance(summary.get(key), str)
                     }
+                    execution = event.get("paper_execution_report")
+                    self.current["paper_execution"] = (
+                        render_markdown(execution) if isinstance(execution, str) and execution else None
+                    )
                     self.current["downloads"] = True
                 else:
                     self.current["error"] = (

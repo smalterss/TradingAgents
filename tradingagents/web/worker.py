@@ -5,6 +5,7 @@ from pathlib import Path
 
 from tradingagents.alpaca_portfolio import AlpacaPortfolioError, resolve_portfolio
 from tradingagents.dataflows.symbols import crypto_base
+from tradingagents.paper_execution import execute_paper_decision, render_paper_execution
 from tradingagents.reporting import manager_summary
 from tradingagents.web.config import ANALYSTS
 
@@ -115,9 +116,29 @@ def execute_run(events, selection, config, report_dir, graph_factory=None):
         if report_state.get("memory_note"):
             report_state["memory_note"] = progress(final_state)["memory_note"]
         graph.save_reports(report_state, ticker, Path(report_dir), html=True)
+        execution_report = ""
+        if config.get("alpaca_paper_execution_enabled") is True:
+            try:
+                execution = execute_paper_decision(
+                    final_state, ticker, day, str(Path(report_dir).resolve()), config
+                )
+                execution_report = render_paper_execution(execution)
+            except Exception as exc:
+                LOG.error("Paper execution failed unexpectedly (%s)", type(exc).__name__)
+                execution_report = (
+                    "### Alpaca paper execution\n\nStatus: **unknown**. "
+                    "Check Alpaca before another run; an unexpected execution error occurred."
+                )
+            report_state["paper_execution_report"] = execution_report
+            try:
+                graph.save_reports(report_state, ticker, Path(report_dir), html=True)
+            except Exception as exc:
+                LOG.error("Paper execution report export failed (%s)", type(exc).__name__)
+                execution_report += "\n\nExecution result could not be saved to the report; check Alpaca and the local execution journal."
         events.put(
             {"type": "completed", **progress(final_state, selection["analysts"]),
-             "rating": run_rating(final_state), "manager_summary": manager_summary(final_state)}
+             "rating": run_rating(final_state), "manager_summary": manager_summary(final_state),
+             "paper_execution_report": execution_report}
         )
     except Exception as exc:
         # Error disclosure policy: see tradingagents-web SPEC.
