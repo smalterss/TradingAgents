@@ -9,7 +9,21 @@ run produces the same on-disk report tree a CLI run does.
 from datetime import datetime
 from pathlib import Path
 
+from tradingagents.agents.context import get_portfolio_context_from_state
 from tradingagents.agents.rating import run_rating
+
+
+def manager_summary(final_state: dict) -> dict[str, str]:
+    """The manager's exact input portfolio and original decision, without another call.
+
+    Legacy states without context are unavailable, not evidence of a flat book.
+    An absent decision stays empty rather than inventing a recommendation.
+    """
+    return {
+        "portfolio": get_portfolio_context_from_state(final_state),
+        "recommendation": final_state.get("final_trade_decision") or "",
+        "rating": run_rating(final_state),
+    }
 
 
 def analyst_names(keys) -> list[str]:
@@ -68,6 +82,7 @@ _SECTIONS = (
         ("Neutral Analyst", "neutral.md", ("risk_debate_state", "neutral_history")),
     )),
     ("V. Portfolio Manager Decision", "5_portfolio", (
+        ("Portfolio Context", "context.md", ("portfolio_context",)),
         ("Portfolio Manager", "decision.md", ("final_trade_decision",)),
     )),
 )
@@ -77,6 +92,14 @@ def _report_parts(final_state: dict) -> list[tuple[str, str, list[tuple[str, str
     """The sections with something to say: (heading, folder, [(agent, file, text)])."""
     parts = []
     for heading, folder, agents in _SECTIONS:
+        if folder == "5_portfolio":
+            summary = manager_summary(final_state)
+            if summary["recommendation"]:
+                parts.append((heading, folder, [
+                    ("Portfolio Context", "context.md", summary["portfolio"]),
+                    ("Portfolio Manager", "decision.md", summary["recommendation"]),
+                ]))
+            continue
         written = []
         for agent, filename, path in agents:
             value = final_state

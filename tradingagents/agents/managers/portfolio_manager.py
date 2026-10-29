@@ -99,6 +99,7 @@ Write these sections, in this order, starting with the rating on its own line:
 
         return {
             "risk_debate_state": new_risk_debate_state,
+            "portfolio_context": portfolio_context,
             "final_trade_decision": final_trade_decision,
             "final_rating": final_rating,
         }
