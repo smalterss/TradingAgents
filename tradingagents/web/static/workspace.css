@@ -62,7 +62,7 @@ input:not([type="checkbox"]):focus, select:focus { border-color: var(--accent); 
 #agent-groups { display: grid; gap: 14px; }
 .agent-team { min-width: 0; padding: 14px; background: #0d1523; border: 1px solid #30415d; border-radius: 10px; }
 .agent-team h4 { color: #a1b3cf; text-transform: uppercase; letter-spacing: 1.3px; font-size: 10px; margin: 0 0 12px; }
-.agent-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.agent-cards { display: grid; grid-template-columns: repeat(2, minmax(0, calc((100% - 16px) / 3))); gap: 8px; }
 .agent-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: start; gap: 6px 10px; min-width: 0; padding: 10px; background: #141f32; color: #e2ebfa; border: 1px solid #2c3d59; border-radius: 9px; text-align: left; }
 .agent-name { margin: 0; color: #dce8ff; font-size: 12px; line-height: 1.4; font-weight: 650; overflow-wrap: anywhere; }
 .agent-state { color: #9dafca; font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }

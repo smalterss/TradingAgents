@@ -307,7 +307,7 @@ def test_compact_research_header_preserves_context(dashboard, width):
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
 
 
-@pytest.mark.parametrize("width,columns", [(1440, 3), (1000, 2), (390, 1)])
+@pytest.mark.parametrize("width,columns", [(1440, 2), (1000, 2), (390, 1)])
 def test_compact_agent_cards_preserve_streams(dashboard, width, columns):
     page, _state = dashboard
     page.set_viewport_size({"width": width, "height": 1100})
@@ -364,6 +364,32 @@ def test_agent_teams_have_separate_boxes(dashboard, width):
             previous = page.locator(".agent-team").nth(index - 1).bounding_box()
             assert team.bounding_box()["y"] >= previous["y"] + previous["height"] + 13
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+
+
+@pytest.mark.parametrize("width", [1440, 1920])
+def test_two_columns_keep_previous_agent_card_dimensions(dashboard, width):
+    page, _state = dashboard
+    page.set_viewport_size({"width": width, "height": 1100})
+    grid = page.locator(".agent-cards").first
+    sizes = grid.evaluate("""node => {
+        const measure = () => [...node.children].map(card => {
+            const {width, height, x, y} = card.getBoundingClientRect();
+            return {width, height, x, y};
+        });
+        const current = measure();
+        node.style.gridTemplateColumns = 'repeat(3, minmax(0, 1fr))';
+        const previous = measure();
+        node.style.removeProperty('grid-template-columns');
+        return {current, previous};
+    }""")
+    for current, previous in zip(sizes["current"], sizes["previous"]):
+        assert abs(current["width"] - previous["width"]) < 1
+        assert abs(current["height"] - previous["height"]) < 1
+    cards = sizes["current"]
+    assert cards[0]["y"] == cards[1]["y"]
+    assert cards[2]["y"] > cards[0]["y"]
+    assert cards[2]["x"] == cards[0]["x"]
+    assert cards[3]["y"] == cards[2]["y"]
 
 
 def test_dashboard_desktop_screenshot(dashboard, tmp_path):
