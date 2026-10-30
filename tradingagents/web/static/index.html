@@ -9,7 +9,11 @@
       content="A local workspace for financial research and explicitly enabled Alpaca paper trading. No live trading."
     />
     <title>TradingAgents — Research workspace</title>
+    <link rel="stylesheet" href="/static/github-markdown.css" />
     <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="/static/workspace.css" />
+    <script src="/static/anime.min.js" defer></script>
+    <script src="/static/motion.js" defer></script>
     <script src="/static/app.js" defer></script>
   </head>
   <body>
@@ -33,10 +37,9 @@
         <div class="panel-heading">
           <span class="eyebrow">01 / CONFIGURE</span>
           <h1 id="setup-heading">
-            A better-informed<br />
-            point of view.
+            Build your<br /> research run.
           </h1>
-          <p>One instrument. Multiple perspectives.</p>
+          <p>One instrument. A team of specialists.</p>
         </div>
         <p id="paper-automation-notice" class="notice" hidden></p>
         <form id="analysis-form">
@@ -220,7 +223,7 @@
         <div class="workspace-heading">
           <div>
             <span class="eyebrow">02 / RESEARCH</span>
-            <h2 id="workspace-title">The research desk</h2>
+            <h2 id="workspace-title">Every perspective. In focus.</h2>
             <p id="workspace-subtitle">Your next perspective starts here.</p>
           </div>
           <div class="run-meta">
@@ -271,6 +274,25 @@
           ></div>
         </section>
 
+        <div class="agent-workbench">
+          <section class="agent-roster" aria-labelledby="agents-heading">
+            <span class="eyebrow">AGENT TEAMS</span>
+            <h3 id="agents-heading">Research crew</h3>
+            <button id="all-agents" class="all-agents" type="button" aria-pressed="true">All agents</button>
+            <div id="agent-groups"></div>
+          </section>
+          <section class="activity-panel" aria-labelledby="activity-heading">
+            <div class="activity-toolbar">
+              <div><span class="eyebrow">LIVE ACTIVITY</span><h3 id="activity-heading">All agents</h3></div>
+              <button id="follow-latest" type="button" aria-pressed="true">Follow latest</button>
+            </div>
+            <p id="activity-empty" class="activity-empty">Start a run to follow real agent activity.</p>
+            <p class="activity-retention">Latest 200 observed events · published outputs, never private reasoning.<br />Output previews are limited to 32,000 characters; full reports appear below.</p>
+            <div id="activity-stream" class="activity-stream" role="region" aria-label="Agent activity" tabindex="0"></div>
+            <p id="activity-latest" class="activity-latest" role="status" aria-live="polite" aria-atomic="true"></p>
+          </section>
+        </div>
+
         <div id="run-notice" class="notice" role="status" hidden></div>
         <section
           id="decision-card"
@@ -289,17 +311,17 @@
           <div class="summary-panel">
             <h3>Portfolio given to the manager</h3>
             <p class="summary-caption">Exact portfolio context supplied for this run</p>
-            <article id="manager-portfolio" class="report-content" aria-label="Manager portfolio input"></article>
+            <article id="manager-portfolio" class="report-content markdown-body" aria-label="Manager portfolio input"></article>
           </div>
           <div class="summary-panel">
             <h3>Manager’s recommendation</h3>
-            <article id="manager-recommendation" class="report-content" aria-label="Manager recommendation"></article>
+            <article id="manager-recommendation" class="report-content markdown-body" aria-label="Manager recommendation"></article>
           </div>
         </section>
         <section id="paper-execution" class="summary-panel paper-execution" aria-label="Alpaca paper order outcome" hidden>
           <span class="eyebrow">SIMULATED ACCOUNT · NEVER LIVE TRADING</span>
           <h3>Paper order outcome</h3>
-          <article id="paper-execution-content" class="report-content"></article>
+          <article id="paper-execution-content" class="report-content markdown-body"></article>
           <p class="summary-caption">Submitted does not mean filled. Stopping a run cannot recall an order already submitted.</p>
         </section>
         <p id="memory-note" class="notice memory-note" hidden></p>
@@ -356,7 +378,7 @@
           ></div>
           <article
             id="report-content"
-            class="report-content"
+            class="report-content markdown-body"
             role="tabpanel"
             tabindex="0"
           ></article>

@@ -17,6 +17,8 @@ Selected analysts run concurrently in subgraphs with private message histories a
 
 Analyst tool rounds are bounded and end in a report-requesting wrap-up turn even if the model keeps asking for tools. Debate and risk depth are configured; shared conditional routers have complete destination maps. Quick models serve analysts, researchers, trader and risk debaters; deep models serve the two managers.
 
+`stream_run` retains its `(messages, state)` pair interface and accepts an optional local activity callback that is never forwarded to LangGraph. It projects genuine allowlisted agent task starts/results and nested analyst evidence-tool lifecycles into public activity. Only published report/debate fields may accompany completion; task inputs, private messages, tool payloads and raw errors are excluded. Repeated debate turns remain separate observed events. Observation does not synthesize events for checkpoint-restored work.
+
 ## Run integrity and recovery
 
 Run dates must be canonical `YYYY-MM-DD` and no later than today. Instrument identity is resolved once and injected into agent context; historical identity context does not pass current sector/industry facts as historical evidence. Run-scoped vendor configuration is installed for execution.

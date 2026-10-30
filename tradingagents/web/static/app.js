@@ -19,6 +19,162 @@ let polling = false;
 let lastRender = "";
 let revision = 0;
 
+const agentTeams = [
+  ["Analysts", [["market", "Market Analyst"], ["social", "Sentiment Analyst"], ["news", "News Analyst"], ["fundamentals", "Fundamentals Analyst"]]],
+  ["Research Debate", [["bull", "Bull Researcher"], ["bear", "Bear Researcher"], ["research_manager", "Research Manager"]]],
+  ["Trading", [["trader", "Trader"]]],
+  ["Risk Review", [["aggressive", "Aggressive Analyst"], ["conservative", "Conservative Analyst"], ["neutral", "Neutral Analyst"]]],
+  ["Portfolio Decision", [["portfolio_manager", "Portfolio Manager"]]],
+];
+const agentNames = Object.fromEntries(agentTeams.flatMap(([, agents]) => agents));
+const activityKinds = new Set(["started", "completed", "failed", "tool_started", "tool_completed", "tool_failed"]);
+const agentStates = new Set(["queued", "running", "completed", "failed", "stopped", "output_available"]);
+let selectedAgent = null;
+let followLatest = true;
+let latestSequence = -1;
+const activityNodes = new Map();
+
+function resetActivity() {
+  selectedAgent = null;
+  latestSequence = -1;
+  activityNodes.clear();
+  $("activity-stream").replaceChildren();
+  $("activity-latest").textContent = "";
+}
+
+function selectAgent(agent) {
+  selectedAgent = agent;
+  renderActivity();
+  if (window.matchMedia("(max-width: 1250px)").matches)
+    $("activity-heading").scrollIntoView({
+      block: "start",
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    });
+}
+
+function initializeAgents() {
+  for (const [index, [team, agents]] of agentTeams.entries()) {
+    const group = document.createElement("section");
+    group.className = "agent-team";
+    const heading = document.createElement("h4");
+    heading.id = `agent-team-${index}`;
+    heading.textContent = team;
+    group.setAttribute("aria-labelledby", heading.id);
+    const cards = document.createElement("div");
+    cards.className = "agent-cards";
+    for (const [id, name] of agents) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "agent-card";
+      button.dataset.agent = id;
+      button.setAttribute("aria-pressed", "false");
+      button.setAttribute("aria-controls", "activity-stream");
+      const label = document.createElement("span");
+      label.className = "agent-name";
+      label.textContent = name;
+      const state = document.createElement("span");
+      state.className = "agent-state";
+      button.append(label, state);
+      button.addEventListener("click", () => selectAgent(id));
+      cards.append(button);
+    }
+    group.append(heading, cards);
+    $("agent-groups").append(group);
+  }
+  $("all-agents").addEventListener("click", () => selectAgent(null));
+  $("follow-latest").addEventListener("click", () => {
+    followLatest = !followLatest;
+    $("follow-latest").setAttribute("aria-pressed", String(followLatest));
+  });
+}
+
+function renderActivity() {
+  const next = snapshot || {};
+  const analysts = next.status === "idle" || !snapshot
+    ? Array.from(form.querySelectorAll('input[name="analyst"]:checked'), (item) => item.value)
+    : next.selected_analysts || [];
+  for (const card of document.querySelectorAll("[data-agent]")) {
+    const id = card.dataset.agent;
+    const raw = next.agent_status?.[id];
+    const state = id in analystNames && !analysts.includes(id) ? "not-selected"
+      : agentStates.has(raw) ? raw : "unavailable";
+    const label = state === "not-selected" ? "Not selected"
+      : state === "output_available" ? "Output available · activity not recorded"
+      : state === "unavailable" ? (next.status === "idle" ? "Ready" : "Activity unavailable")
+      : state.charAt(0).toUpperCase() + state.slice(1);
+    card.dataset.status = state;
+    card.querySelector(".agent-state").textContent = label;
+    card.setAttribute("aria-pressed", String(selectedAgent === id));
+  }
+  $("all-agents").setAttribute("aria-pressed", String(selectedAgent === null));
+  $("activity-heading").textContent = agentNames[selectedAgent] || "All agents";
+  const seen = new Set();
+  const events = (Array.isArray(next.activity) ? next.activity : []).filter((event) => {
+    if (!event || !Number.isInteger(event.seq) || seen.has(event.seq) ||
+        !Object.hasOwn(agentNames, event.agent) || !activityKinds.has(event.kind)) return false;
+    seen.add(event.seq);
+    return true;
+  }).sort((a, b) => a.seq - b.seq).slice(-200);
+  const visible = events.filter((event) => !selectedAgent || event.agent === selectedAgent);
+  const stream = $("activity-stream");
+  const nearBottom = stream.scrollHeight - stream.scrollTop - stream.clientHeight < 48;
+  let changed = false;
+  const keys = new Set(visible.map((event) => event.seq));
+  for (const [seq, entry] of activityNodes) {
+    if (!keys.has(seq)) {
+      entry.node.remove();
+      activityNodes.delete(seq);
+      changed = true;
+    }
+  }
+  for (const event of visible) {
+    const signature = JSON.stringify(event);
+    const old = activityNodes.get(event.seq);
+    if (old?.signature === signature) continue;
+    const node = document.createElement("article");
+    node.className = "activity-event";
+    node.dataset.seq = event.seq;
+    node.dataset.kind = event.kind;
+    const meta = document.createElement("p");
+    meta.className = "activity-meta";
+    meta.textContent = `${agentNames[event.agent]} · ${event.kind.replaceAll("_", " ")} · ${event.timestamp || ""}`;
+    const summary = document.createElement("p");
+    summary.className = "activity-summary";
+    summary.textContent = event.summary || "";
+    node.append(meta, summary);
+    if (typeof event.output_html === "string" && event.output_html) {
+      const output = document.createElement("div");
+      output.className = "activity-output report-content markdown-body";
+      // Same trust boundary as reports: only server-rendered, HTML-disabled Markdown.
+      output.innerHTML = event.output_html;
+      node.append(output);
+    }
+    if (old) old.node.replaceWith(node);
+    else {
+      const after = Array.from(stream.children).find((item) => Number(item.dataset.seq) > event.seq);
+      stream.insertBefore(node, after || null);
+      if (visible.length <= 10 || (latestSequence >= 0 && event.seq > latestSequence))
+        window.dashboardMotion?.enter(node);
+    }
+    activityNodes.set(event.seq, { node, signature });
+    changed = true;
+  }
+  const latest = events.at(-1);
+  if (latest && latest.seq > latestSequence) {
+    $("activity-latest").textContent = `${agentNames[latest.agent]}: ${latest.summary || latest.kind.replaceAll("_", " ")}`;
+    latestSequence = latest.seq;
+  }
+  $("activity-empty").hidden = visible.length > 0;
+  $("activity-empty").textContent = next.status === "idle"
+    ? "Start a run to follow real agent activity."
+    : !Array.isArray(next.activity)
+      ? "Activity unavailable for this snapshot. Any published reports remain below."
+      : runningStates.has(next.status)
+        ? "Waiting for activity from this team. Only observed events appear here."
+        : "No activity recorded for this selection. Any available reports remain below.";
+  if (changed && followLatest && nearBottom) stream.scrollTop = stream.scrollHeight;
+}
+
 function message(id, text) {
   const element = $(id);
   element.textContent = text || "";
@@ -81,6 +237,7 @@ function updateModels(tier, keepModel = false) {
 function countAnalysts() {
   const count = form.querySelectorAll('input[name="analyst"]:checked').length;
   $("analyst-count").textContent = `${count} SELECTED`;
+  renderActivity();
 }
 
 function configure(data) {
@@ -168,6 +325,7 @@ function renderSection() {
     if (next !== lastRender) {
       // HTML comes only from the local server's HTML-disabled Markdown renderer.
       $("report-content").innerHTML = section.html;
+      window.dashboardMotion?.enter($("report-content"));
       lastRender = next;
     }
     $("report-content").setAttribute("aria-labelledby", `tab-${section.id}`);
@@ -218,6 +376,7 @@ function render(next) {
   const active = runningStates.has(next.status);
   const isIdle = next.status === "idle";
   if (next.id !== currentRunId) {
+    resetActivity();
     currentRunId = next.id;
     selectedSection = null;
     lastRender = "";
@@ -236,7 +395,7 @@ function render(next) {
   $("run-status").className = `status-pill ${next.status}`;
   $("elapsed").textContent = isIdle ? "—" : duration(next.elapsed_seconds);
   $("workspace-title").textContent = isIdle
-    ? "The research desk"
+    ? "Every perspective. In focus."
     : `${next.ticker} / Research`;
   $("workspace-subtitle").textContent = isIdle
     ? "Your next perspective starts here."
@@ -258,7 +417,7 @@ function render(next) {
   $("analyst-progress").replaceChildren(
     ...(next.selected_analysts || []).map((key) => {
       const item = document.createElement("span");
-      const state = next.analyst_status?.[key] || "pending";
+      const state = agentStates.has(next.agent_status?.[key]) ? next.agent_status[key] : "unavailable";
       item.className = state;
       const dot = document.createElement("i");
       dot.setAttribute("aria-hidden", "true");
@@ -303,6 +462,7 @@ function render(next) {
   if (completed && next.paper_execution) $("paper-execution-content").innerHTML = next.paper_execution;
   else $("paper-execution-content").replaceChildren();
   message("memory-note", next.memory_note);
+  renderActivity();
   reports();
   controls();
 }
@@ -347,19 +507,21 @@ form.addEventListener("submit", async (event) => {
   revision += 1;
   controls();
   try {
-    render(
-      await request("/api/run", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-Token": config.csrf_token,
-        },
-        body: JSON.stringify(data),
-      }),
-    );
+    const next = await request("/api/run", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": config.csrf_token,
+      },
+      body: JSON.stringify(data),
+    });
+    resetActivity();
+    render(next);
     $("workspace").focus({ preventScroll: true });
     if (window.matchMedia("(max-width: 760px)").matches)
-      $("workspace").scrollIntoView({ behavior: "smooth" });
+      $("workspace").scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      });
   } catch (error) {
     message("form-error", error.message);
   } finally {
@@ -417,6 +579,7 @@ async function initialize() {
     configure(await request("/api/config"));
     await refresh();
     controls();
+    window.dashboardMotion?.enter(".setup-panel, .workspace-heading, .pipeline-card, .agent-roster, .activity-panel", true);
     setInterval(refresh, 1000);
   } catch (_) {
     $("run-status").textContent = "OFFLINE";
@@ -426,4 +589,5 @@ async function initialize() {
     );
   }
 }
+initializeAgents();
 initialize();
