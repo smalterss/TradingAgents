@@ -29,7 +29,7 @@ The worker uses the graph's streaming and shared recovery/recording/export lifec
 
 ## Agent activity presentation
 
-The research workspace presents agent teams and live activity directly beneath its heading, without a separate Agent Pipeline card or duplicate analyst-progress badges. Server stage metadata remains available; removing that display does not change research orchestration.
+The research workspace uses a compact heading with small title typography and inline status/time, retaining ticker, analysis date and analyst count with responsive wrapping. Agent teams and live activity sit directly beneath it, without a separate Agent Pipeline card or duplicate analyst-progress badges. Server stage metadata remains available; removing that display does not change research orchestration.
 
 The graph's public activity projection is owned by `tradingagents-graph`; older adapters without explicit callback support remain compatible but cannot supply observed lifecycle activity. Browser jobs expose five teams (Analysts, Research Debate, Trading, Risk Review and Portfolio Decision) with twelve individual agent stream cards. Unselected analysts are labeled not selected. Only observed task starts mark an agent running; observed completion/failure and run stop/failure settle active statuses. Published report/debate evidence without observed task events uses `output_available`, not invented lifecycle completion or a misleading queued label, including checkpoint-restored work.
 

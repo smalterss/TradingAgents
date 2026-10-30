@@ -280,6 +280,25 @@ def test_dashboard_ignores_old_poll_after_new_run(dashboard):
     playwright.expect(page.locator("#ticker")).to_be_disabled()
 
 
+@pytest.mark.parametrize("width", [1440, 390])
+def test_compact_research_header_preserves_context(dashboard, width):
+    page, state = dashboard
+    page.set_viewport_size({"width": width, "height": 1100})
+    start(page)
+    playwright.expect(page.locator("#workspace-title")).to_have_text("NVDA / Research")
+    playwright.expect(page.locator("#workspace-subtitle")).to_contain_text("2026-01-05")
+    playwright.expect(page.locator("#workspace-subtitle")).to_contain_text("4 analysts selected")
+    playwright.expect(page.locator("#elapsed")).to_be_visible()
+    header = page.locator(".workspace-heading")
+    assert header.bounding_box()["height"] <= (72 if width == 1440 else 100)
+    assert page.locator("#workspace-title").evaluate("node => parseFloat(getComputedStyle(node).fontSize)") == 18
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+    state["run"]["ticker"] = "LONG-TICKER-SYMBOL"
+    page.reload()
+    playwright.expect(page.locator("#workspace-title")).to_have_text("LONG-TICKER-SYMBOL / Research")
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+
+
 def test_dashboard_desktop_screenshot(dashboard, tmp_path):
     page, _state = dashboard
     page.screenshot(path=str(tmp_path / "dashboard-desktop.png"), full_page=True)
