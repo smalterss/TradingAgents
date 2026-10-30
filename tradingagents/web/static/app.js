@@ -3,7 +3,6 @@
 const $ = (id) => document.getElementById(id);
 const form = $("analysis-form");
 const runningStates = new Set(["starting", "running"]);
-const stages = ["analysts", "research", "trader", "risk", "decision"];
 const analystNames = {
   market: "Market",
   social: "Sentiment",
@@ -401,30 +400,6 @@ function render(next) {
     ? "Your next perspective starts here."
     : `Analysis as of ${next.trade_date} · ${next.selected_analysts?.length || 0} analysts selected`;
   $("empty-state").hidden = !isIdle;
-  const stageIndex = stages.indexOf(next.stage);
-  for (const [index, stage] of Array.from(
-    document.querySelectorAll("[data-stage]"),
-  ).entries()) {
-    stage.classList.toggle("active", active && index === stageIndex);
-    stage.classList.toggle(
-      "done",
-      !isIdle && (next.status === "completed" || index < stageIndex),
-    );
-  }
-  $("pipeline-caption").textContent = active
-    ? "Live updates from the research engine"
-    : "Evidence first. Conviction second.";
-  $("analyst-progress").replaceChildren(
-    ...(next.selected_analysts || []).map((key) => {
-      const item = document.createElement("span");
-      const state = agentStates.has(next.agent_status?.[key]) ? next.agent_status[key] : "unavailable";
-      item.className = state;
-      const dot = document.createElement("i");
-      dot.setAttribute("aria-hidden", "true");
-      item.append(dot, `${analystNames[key] || key}: ${state}`);
-      return item;
-    }),
-  );
   let notice = "";
   if (active)
     notice =
@@ -579,7 +554,7 @@ async function initialize() {
     configure(await request("/api/config"));
     await refresh();
     controls();
-    window.dashboardMotion?.enter(".setup-panel, .workspace-heading, .pipeline-card, .agent-roster, .activity-panel", true);
+    window.dashboardMotion?.enter(".setup-panel, .workspace-heading, .agent-roster, .activity-panel", true);
     setInterval(refresh, 1000);
   } catch (_) {
     $("run-status").textContent = "OFFLINE";

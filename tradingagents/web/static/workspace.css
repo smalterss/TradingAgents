@@ -48,19 +48,11 @@ input:not([type="checkbox"]):focus, select:focus { border-color: var(--accent); 
 .status-pill.running, .status-pill.starting { background: #1c3052; color: #b3ccff; }
 .status-pill.completed { background: #15352e; color: #a1e0c4; border-color: #325d50; }
 .status-pill.failed, .status-pill.stopped { color: #f2bbb0; background: #35252c; }
-.pipeline-card, .reports-card, .summary-panel, .decision-card {
+.reports-card, .summary-panel, .decision-card {
   background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
   box-shadow: 0 8px 28px #00000017;
 }
-.pipeline-card { padding: 20px 22px 0; }
 .card-label > span { color: #99acc9; }
-.pipeline { margin-top: 22px; }
-.pipeline strong { font-size: 12px; }
-.stage-number { background: #17253d; color: #a5bce4; border-color: #394e70; }
-.pipeline li.active .stage-number { background: #284675; border-color: #8cabee; box-shadow: 0 0 0 4px #7c9ee917; color: #e5edff; }
-.pipeline li.done .stage-number { background: #17362e; color: #9bddbd; border-color: #3c6856; }
-.stage-detail { color: #96a9c7; font-size: 10px; }
-.analyst-progress { color: #a0b0ca; }
 .agent-workbench { display: grid; grid-template-columns: minmax(295px, .85fr) minmax(0, 1.25fr); gap: 20px; margin: 22px 0; align-items: stretch; }
 .agent-roster, .activity-panel { min-width: 0; padding: 22px; background: #101827; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 10px 30px #00000014; }
 .agent-roster > h3, .activity-toolbar h3 { margin: 6px 0 16px; font-size: 20px; letter-spacing: -.4px; line-height: 1.3; overflow-wrap: anywhere; }
@@ -170,9 +162,6 @@ input:not([type="checkbox"]):focus, select:focus { border-color: var(--accent); 
   .analyst-option { grid-template-columns: 22px minmax(0, 1fr) 14px; min-height: 64px; }
   .analyst-option small { font-size: 10px; }
   .model-details[open] { display: block; }
-  .pipeline-card { padding: 18px 14px 0; }
-  .pipeline { gap: 8px; }
-  .pipeline strong { font-size: 9px; }
   .agent-roster, .activity-panel { padding: 18px 14px; }
   #agent-groups { display: block; }
   .agent-card { min-height: 80px; padding: 13px; }

@@ -29,6 +29,8 @@ The worker uses the graph's streaming and shared recovery/recording/export lifec
 
 ## Agent activity presentation
 
+The research workspace presents agent teams and live activity directly beneath its heading, without a separate Agent Pipeline card or duplicate analyst-progress badges. Server stage metadata remains available; removing that display does not change research orchestration.
+
 The graph's public activity projection is owned by `tradingagents-graph`; older adapters without explicit callback support remain compatible but cannot supply observed lifecycle activity. Browser jobs expose five teams (Analysts, Research Debate, Trading, Risk Review and Portfolio Decision) with twelve individual agent selectors. Unselected analysts are labeled not selected. Only observed task starts mark an agent running; observed completion/failure and run stop/failure settle active statuses. Published report/debate evidence without observed task events uses `output_available`, not invented lifecycle completion or a misleading queued label, including checkpoint-restored work.
 
 Current snapshots retain at most 200 ordered activity records with monotonically increasing per-run sequence numbers and server-received UTC timestamps, not claimed execution timings. Published output previews are capped at 32,000 characters per event; full report sections/downloads are separate. Retention is ephemeral while the server lives, not an audit log or token-by-token model stream. Old records can be evicted, so an empty focused feed does not imply that an agent never ran.

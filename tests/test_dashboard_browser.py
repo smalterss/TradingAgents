@@ -114,6 +114,24 @@ def start(page):
 
 
 @pytest.mark.parametrize("width", [1440, 390])
+def test_workspace_without_pipeline_preserves_agent_activity(dashboard, width):
+    page, state = dashboard
+    page.set_viewport_size({"width": width, "height": 1100})
+    for status in ("idle", "running", "completed", "stopped", "failed"):
+        state["run"] = {**deepcopy(IDLE), "status": status,
+                        "id": None if status == "idle" else "test-run",
+                        "ticker": "NVDA", "trade_date": "2026-01-05"}
+        page.reload()
+        expected_status = {"idle": "READY", "running": "RESEARCHING"}.get(status, status.upper())
+        playwright.expect(page.locator("#run-status")).to_have_text(expected_status)
+        playwright.expect(page.locator(".pipeline-card, [data-stage], #analyst-progress")).to_have_count(0)
+        playwright.expect(page.locator(".agent-roster")).to_be_visible()
+        playwright.expect(page.locator(".activity-panel")).to_be_visible()
+        playwright.expect(page.locator(".agent-card")).to_have_count(12)
+        assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+
+
+@pytest.mark.parametrize("width", [1440, 390])
 def test_paper_automation_indicator_and_actual_outcome(dashboard, width):
     page, state = dashboard
     state["config"]["paper_execution_enabled"] = True
