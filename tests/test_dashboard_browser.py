@@ -125,8 +125,16 @@ def test_workspace_without_pipeline_preserves_agent_activity(dashboard, width):
         expected_status = {"idle": "READY", "running": "RESEARCHING"}.get(status, status.upper())
         playwright.expect(page.locator("#run-status")).to_have_text(expected_status)
         playwright.expect(page.locator(".pipeline-card, [data-stage], #analyst-progress")).to_have_count(0)
-        playwright.expect(page.locator(".agent-roster")).to_be_visible()
+        playwright.expect(page.get_by_role("region", name="Agent teams", exact=True)).to_be_visible()
+        playwright.expect(page.locator("#agents-heading, #activity-retention, .agent-roster > .eyebrow")).to_have_count(0)
+        playwright.expect(page.get_by_text("Research crew", exact=True)).to_have_count(0)
+        playwright.expect(page.locator(".agent-team")).to_have_count(5)
         playwright.expect(page.locator(".activity-stream")).to_have_count(12)
+        assert page.locator(".agent-roster").evaluate("""node =>
+            [...node.querySelectorAll('[aria-labelledby], [aria-describedby]')].every(element =>
+                ['aria-labelledby', 'aria-describedby'].every(attribute =>
+                    (element.getAttribute(attribute) || '').split(/\\s+/).filter(Boolean)
+                        .every(id => document.getElementById(id))))""")
         playwright.expect(page.locator("#all-agents, #activity-stream, .activity-panel")).to_have_count(0)
         playwright.expect(page.locator(".agent-card")).to_have_count(12)
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")

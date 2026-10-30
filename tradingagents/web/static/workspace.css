@@ -57,7 +57,6 @@ input:not([type="checkbox"]):focus, select:focus { border-color: var(--accent); 
 .card-label > span { color: #99acc9; }
 .agent-workbench { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; margin: 22px 0; align-items: stretch; }
 .agent-roster { min-width: 0; padding: 22px; background: #101827; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 10px 30px #00000014; }
-.agent-roster > h3 { margin: 6px 0 16px; font-size: 20px; letter-spacing: -.4px; line-height: 1.3; overflow-wrap: anywhere; }
 .follow-latest { grid-column: 2; grid-row: 1 / 3; align-self: center; background: #17253e; color: #b8cae9; border: 1px solid #385071; border-radius: 7px; padding: 6px 9px; font-size: 11px; }
 .follow-latest[aria-pressed="true"] { background: #20375b; color: #d6e4ff; border-color: #6f92cb; }
 .agent-team h4 { color: #a1b3cf; text-transform: uppercase; letter-spacing: 1.3px; font-size: 10px; margin: 23px 0 10px; }
@@ -76,7 +75,6 @@ input:not([type="checkbox"]):focus, select:focus { border-color: var(--accent); 
 .agent-card[data-status="failed"] .agent-state, .agent-card[data-status="stopped"] .agent-state { color: #efb0a5; }
 .agent-card[data-status="not-selected"] { background: #101827; border-style: dashed; }
 .agent-card[data-status="output_available"] .agent-state { color: #e3c18b; }
-.activity-retention { margin: 13px 0 18px; color: #94a6c3; font-size: 10px; line-height: 1.6; }
 .activity-stream { grid-column: 1 / -1; height: 160px; min-width: 0; min-height: 0; overflow: auto; overflow-anchor: none; scrollbar-color: #41577c #111b2c; padding: 2px 6px 8px 5px; overscroll-behavior: contain; }
 .activity-event { position: relative; border-left: 1px solid #3a5177; padding: 0 0 26px 19px; margin-left: 3px; overflow-wrap: anywhere; }
 .activity-event::before { content: ''; width: 7px; height: 7px; background: #91b2f7; border-radius: 50%; position: absolute; top: 7px; left: -4px; }

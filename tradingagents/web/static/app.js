@@ -76,7 +76,6 @@ function initializeAgents() {
       stream.tabIndex = 0;
       stream.setAttribute("role", "region");
       stream.setAttribute("aria-label", `${name} stream`);
-      stream.setAttribute("aria-describedby", "activity-retention");
       const empty = document.createElement("p");
       empty.className = "activity-empty";
       stream.append(empty);
