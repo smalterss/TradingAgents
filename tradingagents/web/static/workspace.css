@@ -83,9 +83,10 @@ input:not([type="checkbox"]):focus, select:focus { border-color: var(--accent); 
 .activity-event[data-kind="completed"]::before, .activity-event[data-kind="tool_completed"]::before { background: #8bd9b5; }
 .activity-event[data-kind="failed"]::before, .activity-event[data-kind="tool_failed"]::before { background: #efb0a5; }
 .activity-meta { color: #a3b5d2; font: 10px/1.7 var(--mono); margin: 0 0 7px; }
-.activity-summary { font-size: 13px; font-weight: 600; color: #e1eafb; margin: 0 0 10px; }
-.activity-output.report-content { background: #0d1523; border: 1px solid #293e5e; border-radius: 9px; padding: 16px; margin: 14px 0 0; font-size: 13px; }
-.activity-empty { padding: 18px 12px; color: #a1b3cf; border: 1px dashed #354a6b; border-radius: 8px; font-size: 13px; text-align: center; margin: 0 0 8px; }
+.activity-summary { font-size: 12px; font-weight: 600; color: #e1eafb; margin: 0 0 10px; }
+.activity-output.report-content { background: #0d1523; border: 1px solid #293e5e; border-radius: 9px; padding: 16px; margin: 14px 0 0; font-size: 12px; }
+.activity-output.markdown-body table { font-size: 11px; }
+.activity-empty { padding: 18px 12px; color: #a1b3cf; border: 1px dashed #354a6b; border-radius: 8px; font-size: 12px; text-align: center; margin: 0 0 8px; }
 .activity-latest { grid-column: 1 / -1; margin: 4px 0 0; padding: 6px 0 0; border-top: 1px solid #2a3c58; color: #a7bee5; font-size: 11px; line-height: 1.7; overflow-wrap: anywhere; }
 .activity-latest:empty { display: none; }
 .notice { background: #15243a; border-color: #385170; color: #c3d4ef; border-radius: 9px; }

@@ -479,6 +479,8 @@ def test_all_agent_streams_route_and_follow_independently(dashboard, width):
 def test_local_libraries_motion_and_report_formatting(dashboard, width):
     page, state = dashboard
     page.set_viewport_size({"width": width, "height": 1100})
+    font_size = "node => parseFloat(getComputedStyle(node).fontSize)"
+    assert page.locator('[data-agent="market"] .activity-empty').evaluate(font_size) == 12
     # Upstream npm 3.2.2 retains the runtime version string from 3.2.1.
     assert page.evaluate("window.anime.version") == "3.2.1"
     assert page.locator('link[href="/static/github-markdown.css"]').count() == 1
@@ -494,6 +496,12 @@ def test_local_libraries_motion_and_report_formatting(dashboard, width):
     playwright.expect(page.locator(".activity-output h2")).to_have_text("Market evidence")
     playwright.expect(page.get_by_role("region", name="Market Analyst stream", exact=True)).to_be_visible()
     playwright.expect(page.locator("#report-content table")).to_be_visible()
+    assert page.locator(".activity-summary").first.evaluate(font_size) == 12
+    assert page.locator(".activity-output").evaluate(font_size) == 12
+    assert page.locator(".activity-output p").first.evaluate(font_size) == 12
+    assert page.locator(".activity-output table").evaluate(font_size) == 11
+    assert page.locator("#report-content").evaluate(font_size) == 14
+    assert page.locator("#report-content table").evaluate(font_size) == 12
     assert page.locator("#report-content").evaluate("node => parseFloat(getComputedStyle(node).lineHeight) >= 24")
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
     shots = ASSETS.parents[2] / ".thinkrail" / "context" / "qa"
