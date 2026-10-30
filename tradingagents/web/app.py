@@ -19,6 +19,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from markdown_it import MarkdownIt
 
+from tradingagents.graph.activity import AGENT_IDS, SUMMARIES
 from tradingagents.web.config import (
     ANALYSTS,
     MissingCredentials,
@@ -30,6 +31,8 @@ from tradingagents.web.worker import TITLES, execute_run
 
 LOG = logging.getLogger(__name__)
 ACTIVE = ("starting", "running")
+ACTIVITY_LIMIT = 200
+ACTIVITY_OUTPUT_LIMIT = 32_000
 CSP = (
     "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; "
     "img-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
@@ -56,6 +59,8 @@ def idle_snapshot():
         "started_at": None,
         "elapsed_seconds": 0,
         "sections": [],
+        "activity": [],
+        "agent_status": dict.fromkeys(AGENT_IDS, "queued"),
         "stage": "analysts",
         "analyst_status": dict.fromkeys(ANALYSTS, "pending"),
         "rating": None,
@@ -77,6 +82,33 @@ class RunManager:
         self.started = self.ended = None
         self.report_dir = None
         self.sections = {}
+        self.activity_seq = 0
+
+    def _activity(self, event):
+        agent, kind = event.get("agent"), event.get("kind")
+        if agent not in AGENT_IDS or kind not in SUMMARIES:
+            return
+        if agent in ANALYSTS and agent not in self.current["selected_analysts"]:
+            return
+        self.activity_seq += 1
+        item = {"seq": self.activity_seq, "agent": agent, "kind": kind,
+                "summary": SUMMARIES[kind], "timestamp": datetime.now(UTC).isoformat()}
+        if kind == "completed" and isinstance(event.get("output"), str) and event["output"]:
+            item["output_html"] = render_markdown(event["output"][:ACTIVITY_OUTPUT_LIMIT])
+        self.current["activity"].append(item)
+        del self.current["activity"][:-ACTIVITY_LIMIT]
+        if kind in ("started", "completed", "failed"):
+            self.current["agent_status"][agent] = {
+                "started": "running", "completed": "completed", "failed": "failed"
+            }[kind]
+            if agent in ANALYSTS:
+                self.current["analyst_status"][agent] = self.current["agent_status"][agent]
+
+    def _settle_agents(self, status):
+        for agent, value in self.current["agent_status"].items():
+            if value == "running":
+                # Missing finish evidence is not evidence of completion.
+                self.current["agent_status"][agent] = "failed" if status == "completed" else status
 
     def _drain(self):
         if self.events is None:
@@ -89,10 +121,10 @@ class RunManager:
             kind = event.get("type")
             if self.current["status"] not in ACTIVE:
                 continue
+            if kind == "activity":
+                self._activity(event)
             if kind == "running":
                 self.current["status"] = "running"
-                for a in self.current["selected_analysts"]:
-                    self.current["analyst_status"][a] = "running"
             if kind in ("progress", "completed"):
                 for key, text in event.get("sections", {}).items():
                     if key in TITLES and isinstance(text, str):
@@ -105,11 +137,12 @@ class RunManager:
                     self.current["stage"] = event["stage"]
                 for a in self.current["selected_analysts"]:
                     status = event.get("analyst_status", {}).get(a)
-                    if status in ("pending", "running", "completed"):
+                    if status == "completed":
                         self.current["analyst_status"][a] = status
                 self.current["memory_note"] = event.get("memory_note", "")
             if kind in ("completed", "failed"):
                 self.current["status"] = kind
+                self._settle_agents(kind)
                 self.ended = time.monotonic()
                 if kind == "completed":
                     self.current["rating"] = event.get("rating")
@@ -141,6 +174,7 @@ class RunManager:
                 self._drain()
                 if self.current["status"] in ACTIVE:
                     self.current["status"] = "failed"
+                    self._settle_agents("failed")
                     self.current["error"] = "Analysis worker exited unexpectedly."
                     self.ended = time.monotonic()
                 self._release()
@@ -172,6 +206,7 @@ class RunManager:
                 raise HTTPException(409, "An analysis is already active.")
             run_id = uuid.uuid4().hex
             self.current = idle_snapshot()
+            self.activity_seq = 0
             self.current.update(
                 id=run_id,
                 status="starting",
@@ -231,6 +266,7 @@ class RunManager:
                 self._release()
             if self.current["status"] in ACTIVE:
                 self.current.update(status="stopped", downloads=False, rating=None)
+                self._settle_agents("stopped")
                 self.ended = time.monotonic()
             return self.snapshot()
 

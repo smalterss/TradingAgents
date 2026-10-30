@@ -323,6 +323,7 @@ class Graph:
         return None
 
     def stream_run(self, state, **args):
+        assert "activity_callback" not in args
         assert state is None
         assert args["config"]["configurable"]["thread_id"] == "saved-thread"
         yield [], {"market_report": "Evidence"}
@@ -447,3 +448,43 @@ def test_worker_cleanup_on_lifecycle_failure(base, selection, tmp_path, method):
         events.append(queue.get_nowait())
     assert events[-1] == {"type": "failed"}
     assert "secret response body" not in str(events)
+
+
+def test_worker_projects_activity_without_private_fields(base, selection, tmp_path):
+    class ActivityGraph(Graph):
+        def stream_run(self, state, *, activity_callback=None, **args):
+            activity_callback({"agent": "market", "kind": "started", "summary": "SECRET"})
+            activity_callback({"agent": "market", "kind": "tool_completed", "output": "SECRET"})
+            activity_callback({"agent": "not-allowed", "kind": "started"})
+            activity_callback({"agent": "market", "kind": "completed", "output": "Published",
+                               "input": "SECRET"})
+            yield from super().stream_run(state, **args)
+
+    queue = Queue()
+    execute_run(queue, selection, base, tmp_path, graph_factory=ActivityGraph)
+    events = list(queue.queue)
+    activity = [event for event in events if event["type"] == "activity"]
+    assert [event["kind"] for event in activity] == ["started", "tool_completed", "completed"]
+    assert activity[-1]["output"] == "Published"
+    assert "SECRET" not in str(events)
+    assert events[-1]["type"] == "completed"
+
+
+def test_activity_unexpected_exit_and_new_run_reset(base, selection):
+    from tradingagents.web.app import RunManager
+
+    runs = RunManager(base, FakeContext())
+    runs.start(selection)
+    runs.events.put({"type": "activity", "agent": "market", "kind": "started"})
+    assert runs.snapshot()["activity"][0]["seq"] == 1
+    runs.process.alive = False
+    failed = runs.snapshot()
+    assert failed["status"] == "failed"
+    assert failed["agent_status"]["market"] == "failed"
+    assert failed["agent_status"]["bull"] == "queued"
+    fresh = runs.start(selection)
+    assert fresh["activity"] == []
+    assert set(fresh["agent_status"].values()) == {"queued"}
+    runs.events.put({"type": "activity", "agent": "market", "kind": "started"})
+    assert runs.snapshot()["activity"][0]["seq"] == 1
+    assert runs.stop()["agent_status"]["market"] == "stopped"

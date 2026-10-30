@@ -1,10 +1,12 @@
 """Spawn-safe research worker. Only allowlisted report text crosses into the server."""
 
+import inspect
 import logging
 from pathlib import Path
 
 from tradingagents.alpaca_portfolio import AlpacaPortfolioError, resolve_portfolio
 from tradingagents.dataflows.symbols import crypto_base
+from tradingagents.graph.activity import AGENT_IDS, SUMMARIES
 from tradingagents.paper_execution import execute_paper_decision, render_paper_execution
 from tradingagents.reporting import manager_summary
 from tradingagents.web.config import ANALYSTS
@@ -70,7 +72,7 @@ def progress(state, selected_analysts=ANALYSTS):
     return {
         "sections": sections,
         "stage": stage,
-        "analyst_status": {a: "completed" if a in sections else "running" for a in ANALYSTS},
+        "analyst_status": {a: "completed" if a in sections else "pending" for a in ANALYSTS},
         # Error disclosure policy: see tradingagents-web SPEC.
         "memory_note": "Past decision memory could not be fully updated or loaded. Research continued; unresolved decisions remain pending."
         if state.get("memory_note")
@@ -103,6 +105,20 @@ def execute_run(events, selection, config, report_dir, graph_factory=None):
                     thread_id
                 )
             final_state = {}
+            def activity_callback(activity):
+                agent, kind = activity.get("agent"), activity.get("kind")
+                if agent not in AGENT_IDS or kind not in SUMMARIES:
+                    return
+                event = {"type": "activity", "agent": agent, "kind": kind,
+                         "summary": SUMMARIES[kind]}
+                if kind == "completed" and isinstance(activity.get("output"), str):
+                    event["output"] = activity["output"][:32_000]
+                events.put(event)
+
+            # Older adapters/fakes may forward **args blindly to LangGraph.
+            # Only pass this local extension when explicitly supported.
+            if "activity_callback" in inspect.signature(graph.stream_run).parameters:
+                args["activity_callback"] = activity_callback
             for _messages, chunk in graph.stream_run(graph.checkpoint_input(state), **args):
                 if chunk:
                     final_state.update(chunk)

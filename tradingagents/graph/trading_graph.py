@@ -19,6 +19,7 @@ from tradingagents.memory import TradingMemoryLog, settlement
 from tradingagents.memory.reflection import Reflector
 from tradingagents.reporting import write_report_tree
 
+from .activity import task_activity
 from .checkpointer import checkpoint_step, clear_checkpoint, get_checkpointer, thread_id
 from .conditional_logic import ConditionalLogic
 from .propagation import Propagator
@@ -407,12 +408,15 @@ class TradingAgentsGraph:
 
         return final_state, run_rating(final_state)
 
-    def stream_run(self, graph_input, **args):
+    def stream_run(self, graph_input, *, activity_callback=None, **args):
         """Stream a run as ``(messages, state)`` pairs.
 
         ``messages`` are the agents' messages, the analysts' included. ``state``
         is the run's state after a top-level step; for a step inside an analyst's
         graph it is that analyst's report once filed, else None.
+
+        ``activity_callback``, when provided, receives safe public task events;
+        it is consumed locally, never passed to LangGraph.
 
         Each analyst works in a graph of its own, and the run's state takes the
         analysts' reports only when the slowest has finished, so their messages
@@ -427,6 +431,10 @@ class TradingAgentsGraph:
         try:
             while (step := context.run(next, stream, None)) is not None:
                 namespace, mode, chunk = step
+                if mode == "tasks" and activity_callback is not None:
+                    activity = task_activity(namespace, chunk)
+                    if activity is not None:
+                        activity_callback(activity)
                 if namespace:
                     result = chunk.get("result") if mode == "tasks" else None
                     if isinstance(result, dict):

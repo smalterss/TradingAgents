@@ -387,3 +387,24 @@ def test_the_memory_step_reads_lessons_as_of_the_trade_date_and_settles_once(tmp
 
     assert asked == ["2026-01-20", "2026-01-20"]
     assert (tmp_path / "log.md").read_text() == log_after_first
+
+
+def test_activity_observes_real_tasks_and_repeated_debate_turns(tmp_path, monkeypatch, offline):
+    from tradingagents.graph.activity import AGENT_IDS
+
+    graph = _graph(tmp_path, monkeypatch, ScriptedModel(), max_debate_rounds=2)
+    activity = []
+    pairs = list(graph.stream_run(
+        graph.create_run_state("NVDA", TRADE_DATE), activity_callback=activity.append,
+        **graph.propagator.get_graph_args()))
+    assert pairs and all(len(pair) == 2 for pair in pairs)
+    assert {e["agent"] for e in activity} == set(AGENT_IDS)
+    for agent in AGENT_IDS:
+        events = [e for e in activity if e["agent"] == agent]
+        assert events[0]["kind"] == "started"
+        assert events[-1]["kind"] == "completed"
+        assert events[-1].get("output"), agent
+    assert sum(e["agent"] == "bull" and e["kind"] == "completed" for e in activity) == 2
+    tool_events = [e for e in activity if e["kind"].startswith("tool_")]
+    assert tool_events
+    assert all(set(e) == {"agent", "kind", "summary"} for e in tool_events)
