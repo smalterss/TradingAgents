@@ -348,6 +348,24 @@ def test_running_agent_animation_tracks_observed_state_and_motion_preference(das
         assert indicator.evaluate(animation) == "none"
 
 
+@pytest.mark.parametrize("width", [1440, 390])
+def test_agent_teams_have_separate_boxes(dashboard, width):
+    page, _state = dashboard
+    page.set_viewport_size({"width": width, "height": 1100})
+    expected = [("Analysts", 4), ("Research Debate", 3), ("Trading", 1),
+                ("Risk Review", 3), ("Portfolio Decision", 1)]
+    for index, (name, count) in enumerate(expected):
+        team = page.get_by_role("region", name=name, exact=True)
+        playwright.expect(team.locator(".agent-card")).to_have_count(count)
+        assert team.evaluate("node => parseFloat(getComputedStyle(node).borderTopWidth)") == 1
+        assert team.evaluate("node => parseFloat(getComputedStyle(node).borderRadius)") == 10
+        assert team.evaluate("node => node.scrollWidth <= node.clientWidth")
+        if index:
+            previous = page.locator(".agent-team").nth(index - 1).bounding_box()
+            assert team.bounding_box()["y"] >= previous["y"] + previous["height"] + 13
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+
+
 def test_dashboard_desktop_screenshot(dashboard, tmp_path):
     page, _state = dashboard
     page.screenshot(path=str(tmp_path / "dashboard-desktop.png"), full_page=True)
