@@ -317,7 +317,7 @@ def test_compact_agent_cards_preserve_streams(dashboard, width, columns):
     card = page.locator('[data-agent="market"]')
     assert card.bounding_box()["height"] < 260
     stream = card.locator(".activity-stream")
-    assert stream.evaluate("node => parseFloat(getComputedStyle(node).height)") == 160
+    assert abs(stream.bounding_box()["height"] * 3 - 160) < .1
     playwright.expect(stream).to_be_visible()
     playwright.expect(card.get_by_role("button", name="Follow latest for Market Analyst")).to_be_visible()
     assert card.evaluate("node => node.scrollWidth <= node.clientWidth")
@@ -366,8 +366,8 @@ def test_agent_teams_have_separate_boxes(dashboard, width):
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
 
 
-@pytest.mark.parametrize("width", [1440, 1920])
-def test_two_columns_keep_previous_agent_card_dimensions(dashboard, width):
+@pytest.mark.parametrize("width", [1440, 1920, 1000, 390])
+def test_agent_cards_are_one_third_previous_dimensions(dashboard, width):
     page, _state = dashboard
     page.set_viewport_size({"width": width, "height": 1100})
     grid = page.locator(".agent-cards").first
@@ -377,19 +377,34 @@ def test_two_columns_keep_previous_agent_card_dimensions(dashboard, width):
             return {width, height, x, y};
         });
         const current = measure();
-        node.style.gridTemplateColumns = 'repeat(3, minmax(0, 1fr))';
+        node.style.gridTemplateColumns = innerWidth <= 760 ? '1fr'
+            : innerWidth <= 1250 ? 'repeat(2, minmax(0, 1fr))'
+            : 'repeat(2, minmax(0, calc((100% - 16px) / 3)))';
+        node.style.gap = '8px';
+        node.style.zoom = '1';
+        node.style.width = '100%';
         const previous = measure();
         node.style.removeProperty('grid-template-columns');
+        node.style.removeProperty('gap');
+        node.style.removeProperty('zoom');
+        node.style.removeProperty('width');
         return {current, previous};
     }""")
     for current, previous in zip(sizes["current"], sizes["previous"]):
-        assert abs(current["width"] - previous["width"]) < 1
-        assert abs(current["height"] - previous["height"]) < 1
+        assert abs(current["width"] * 3 - previous["width"]) < 1
+        assert abs(current["height"] * 3 - previous["height"]) < 2
     cards = sizes["current"]
-    assert cards[0]["y"] == cards[1]["y"]
-    assert cards[2]["y"] > cards[0]["y"]
-    assert cards[2]["x"] == cards[0]["x"]
-    assert cards[3]["y"] == cards[2]["y"]
+    if width > 760:
+        assert cards[0]["y"] == cards[1]["y"]
+        assert cards[2]["y"] > cards[0]["y"]
+        assert cards[2]["x"] == cards[0]["x"]
+        assert cards[3]["y"] == cards[2]["y"]
+    else:
+        assert all(card["x"] == cards[0]["x"] for card in cards)
+    card = page.locator('[data-agent="market"]')
+    scale = grid.evaluate("node => parseFloat(getComputedStyle(node).zoom)")
+    assert abs(scale - 1 / 3) < .001
+    assert abs(card.locator('.agent-name').evaluate("node => parseFloat(getComputedStyle(node).fontSize)") * scale - 4) < .01
 
 
 def test_dashboard_desktop_screenshot(dashboard, tmp_path):

@@ -57,13 +57,13 @@ input:not([type="checkbox"]):focus, select:focus { border-color: var(--accent); 
 .card-label > span { color: #99acc9; }
 .agent-workbench { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; margin: 22px 0; align-items: stretch; }
 .agent-roster { min-width: 0; padding: 22px; background: #101827; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 10px 30px #00000014; }
-.follow-latest { grid-column: 2; grid-row: 1 / 3; align-self: center; background: #17253e; color: #b8cae9; border: 1px solid #385071; border-radius: 7px; padding: 6px 9px; font-size: 11px; }
-.follow-latest[aria-pressed="true"] { background: #20375b; color: #d6e4ff; border-color: #6f92cb; }
+.follow-latest { grid-column: 2; grid-row: 1 / 3; align-self: center; background: #17253e; color: #b8cae9; border: 0; box-shadow: inset 0 0 0 1px #385071; border-radius: 7px; padding: 7px 10px; font-size: 11px; }
+.follow-latest[aria-pressed="true"] { background: #20375b; color: #d6e4ff; box-shadow: inset 0 0 0 1px #6f92cb; }
 #agent-groups { display: grid; gap: 14px; }
 .agent-team { min-width: 0; padding: 14px; background: #0d1523; border: 1px solid #30415d; border-radius: 10px; }
 .agent-team h4 { color: #a1b3cf; text-transform: uppercase; letter-spacing: 1.3px; font-size: 10px; margin: 0 0 12px; }
-.agent-cards { display: grid; grid-template-columns: repeat(2, minmax(0, calc((100% - 16px) / 3))); gap: 8px; }
-.agent-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: start; gap: 6px 10px; min-width: 0; padding: 10px; background: #141f32; color: #e2ebfa; border: 1px solid #2c3d59; border-radius: 9px; text-align: left; }
+.agent-cards { zoom: calc(1 / 3); width: calc(100% / 3); display: grid; grid-template-columns: repeat(2, minmax(0, calc((100% - 16px) / 3))); gap: 8px; }
+.agent-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: start; gap: 6px 10px; min-width: 0; padding: 11px; background: #141f32; color: #e2ebfa; border: 0; box-shadow: inset 0 0 0 1px #2c3d59; border-radius: 9px; text-align: left; }
 .agent-name { margin: 0; color: #dce8ff; font-size: 12px; line-height: 1.4; font-weight: 650; overflow-wrap: anywhere; }
 .agent-state { color: #9dafca; font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
 .agent-state::before { content: ''; display: inline-block; height: 5px; width: 5px; margin-right: 6px; border-radius: 50%; background: currentColor; vertical-align: middle; }
@@ -75,7 +75,7 @@ input:not([type="checkbox"]):focus, select:focus { border-color: var(--accent); 
 }
 .agent-card[data-status="completed"] .agent-state { color: #8bd9b5; }
 .agent-card[data-status="failed"] .agent-state, .agent-card[data-status="stopped"] .agent-state { color: #efb0a5; }
-.agent-card[data-status="not-selected"] { background: #101827; border-style: dashed; }
+.agent-card[data-status="not-selected"] { background: #101827; outline: 1px dashed #2c3d59; outline-offset: -1px; box-shadow: none; }
 .agent-card[data-status="output_available"] .agent-state { color: #e3c18b; }
 .activity-stream { grid-column: 1 / -1; height: 160px; min-width: 0; min-height: 0; overflow: auto; overflow-anchor: none; scrollbar-color: #41577c #111b2c; padding: 2px 6px 8px 5px; overscroll-behavior: contain; }
 .activity-event { position: relative; border-left: 1px solid #3a5177; padding: 0 0 26px 19px; margin-left: 3px; overflow-wrap: anywhere; }
@@ -87,7 +87,7 @@ input:not([type="checkbox"]):focus, select:focus { border-color: var(--accent); 
 .activity-output.report-content { background: #0d1523; border: 1px solid #293e5e; border-radius: 9px; padding: 16px; margin: 14px 0 0; font-size: 12px; }
 .activity-output.markdown-body table { font-size: 11px; }
 .activity-empty { padding: 18px 12px; color: #a1b3cf; border: 1px dashed #354a6b; border-radius: 8px; font-size: 12px; text-align: center; margin: 0 0 8px; }
-.activity-latest { grid-column: 1 / -1; margin: 4px 0 0; padding: 6px 0 0; border-top: 1px solid #2a3c58; color: #a7bee5; font-size: 11px; line-height: 1.7; overflow-wrap: anywhere; }
+.activity-latest { grid-column: 1 / -1; margin: 4px 0 0; padding: 7px 0 0; box-shadow: inset 0 1px 0 #2a3c58; color: #a7bee5; font-size: 11px; line-height: 1.7; overflow-wrap: anywhere; }
 .activity-latest:empty { display: none; }
 .notice { background: #15243a; border-color: #385170; color: #c3d4ef; border-radius: 9px; }
 .error-notice { background: #30232c; border-color: #76505b; color: #f2c0bb; }

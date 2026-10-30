@@ -129,6 +129,7 @@ function renderActivity() {
     const anchor = Array.from(stream.children).find((node) =>
       keys.has(Number(node.dataset.seq)) && node.getBoundingClientRect().bottom > stream.getBoundingClientRect().top);
     const anchorOffset = anchor?.getBoundingClientRect().top;
+    const streamScale = stream.getBoundingClientRect().height / stream.offsetHeight || 1;
     let changed = false;
     for (const [seq, entry] of nodes) {
       if (!keys.has(seq)) {
@@ -184,7 +185,7 @@ function renderActivity() {
     } else if (!latest) reader.latest.textContent = "";
     if (changed) {
       if (reader.follow && nearBottom) stream.scrollTop = stream.scrollHeight;
-      else if (anchor?.isConnected) stream.scrollTop = top + anchor.getBoundingClientRect().top - anchorOffset;
+      else if (anchor?.isConnected) stream.scrollTop = top + (anchor.getBoundingClientRect().top - anchorOffset) / streamScale;
       else stream.scrollTop = top;
     }
   }
