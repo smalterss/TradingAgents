@@ -4,7 +4,7 @@ from queue import Queue
 
 import pytest
 
-from tradingagents.graph.activity import AGENT_IDS, task_activity
+from tradingagents.graph.activity import AGENT_IDS, published_agents, task_activity
 from tradingagents.web.app import ACTIVITY_LIMIT, RunManager
 
 
@@ -24,6 +24,26 @@ def test_task_allowlist_and_private_payloads():
         "trader_investment_plan": "Published plan", "messages": secret, "past_context": secret}})
     assert published["output"] == "Published plan"
     assert secret not in str(published)
+
+
+def test_published_work_is_not_fabricated_lifecycle(tmp_path):
+    state = {
+        "market_report": "Restored report", "investment_plan": "Restored plan",
+        "investment_debate_state": {"bull_history": "Bull contribution", "bear_history": "Bear contribution"},
+        "risk_debate_state": {"aggressive_history": "Published risk argument"},
+        "trader_investment_plan": "Restored proposal", "messages": "PRIVATE",
+    }
+    assert set(published_agents(state)) == {
+        "market", "research_manager", "bull", "bear", "aggressive", "trader"}
+    runs = manager(tmp_path)
+    runs.events.put({"type": "progress", "published_agents": published_agents(state) + ["PRIVATE", "news"]})
+    runs.events.put({"type": "completed"})
+    snapshot = runs.snapshot()
+    assert snapshot["agent_status"]["market"] == "output_available"
+    assert snapshot["agent_status"]["trader"] == "output_available"
+    assert snapshot["agent_status"]["news"] == "queued"
+    assert snapshot["agent_status"]["portfolio_manager"] == "queued"
+    assert snapshot["activity"] == []
 
 
 def manager(tmp_path):

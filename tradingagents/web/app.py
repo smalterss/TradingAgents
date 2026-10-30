@@ -126,6 +126,11 @@ class RunManager:
             if kind == "running":
                 self.current["status"] = "running"
             if kind in ("progress", "completed"):
+                for agent in event.get("published_agents", []):
+                    if (agent in AGENT_IDS
+                            and (agent not in ANALYSTS or agent in self.current["selected_analysts"])
+                            and self.current["agent_status"][agent] == "queued"):
+                        self.current["agent_status"][agent] = "output_available"
                 for key, text in event.get("sections", {}).items():
                     if key in TITLES and isinstance(text, str):
                         self.sections[key] = {

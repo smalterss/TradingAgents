@@ -22,6 +22,20 @@ REPORT_FIELDS = {
 }
 
 
+def published_agents(state):
+    """Identify published work without asserting that its lifecycle was observed."""
+    agents = [agent for agent, field in REPORT_FIELDS.items()
+              if isinstance(state.get(field), str) and state[field].strip()]
+    for field, roles in (("investment_debate_state", ("bull", "bear")),
+                         ("risk_debate_state", ("aggressive", "conservative", "neutral"))):
+        debate = state.get(field)
+        if isinstance(debate, dict):
+            agents.extend(agent for agent in roles
+                          if isinstance(debate.get(f"{agent}_history"), str)
+                          and debate[f"{agent}_history"].strip())
+    return agents
+
+
 def task_activity(namespace, chunk):
     """Map genuine LangGraph task start/result events to an allowlisted record."""
     if not isinstance(chunk, dict):

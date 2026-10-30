@@ -408,3 +408,34 @@ def test_activity_observes_real_tasks_and_repeated_debate_turns(tmp_path, monkey
     tool_events = [e for e in activity if e["kind"].startswith("tool_")]
     assert tool_events
     assert all(set(e) == {"agent", "kind", "summary"} for e in tool_events)
+
+
+def test_resumed_activity_labels_restored_outputs_without_replaying_events(tmp_path, monkeypatch, offline):
+    from queue import Queue
+
+    from tradingagents.web.app import RunManager
+    from tradingagents.web.worker import progress
+
+    graph = _graph(tmp_path, monkeypatch, ScriptedModel(fail_at=13), checkpoint_enabled=True)
+    with pytest.raises(RuntimeError, match="provider unavailable"):
+        graph.propagate("NVDA", TRADE_DATE)
+    runs = RunManager({"results_dir": str(tmp_path)})
+    runs.current.update(status="running", selected_analysts=["market", "social", "news", "fundamentals"])
+    runs.events = Queue()
+    with graph.checkpoint_scope("NVDA", TRADE_DATE) as thread:
+        state = graph.create_run_state("NVDA", TRADE_DATE)
+        args = graph.propagator.get_graph_args()
+        args.setdefault("config", {}).setdefault("configurable", {})["thread_id"] = thread
+        final = {}
+        for _, chunk in graph.stream_run(
+                graph.checkpoint_input(state),
+                activity_callback=lambda event: runs.events.put({"type": "activity", **event}), **args):
+            if chunk:
+                final.update(chunk)
+                runs.events.put({"type": "progress", **progress(final)})
+    runs.events.put({"type": "completed", **progress(final)})
+    snapshot = runs.snapshot()
+    for agent in ("market", "social", "news", "fundamentals", "bull", "bear", "research_manager", "trader"):
+        assert snapshot["agent_status"][agent] == "output_available", agent
+        assert not any(e["agent"] == agent for e in snapshot["activity"])
+    assert snapshot["agent_status"]["portfolio_manager"] == "completed"

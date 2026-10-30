@@ -6,7 +6,7 @@ from pathlib import Path
 
 from tradingagents.alpaca_portfolio import AlpacaPortfolioError, resolve_portfolio
 from tradingagents.dataflows.symbols import crypto_base
-from tradingagents.graph.activity import AGENT_IDS, SUMMARIES
+from tradingagents.graph.activity import AGENT_IDS, SUMMARIES, published_agents
 from tradingagents.paper_execution import execute_paper_decision, render_paper_execution
 from tradingagents.reporting import manager_summary
 from tradingagents.web.config import ANALYSTS
@@ -73,6 +73,7 @@ def progress(state, selected_analysts=ANALYSTS):
         "sections": sections,
         "stage": stage,
         "analyst_status": {a: "completed" if a in sections else "pending" for a in ANALYSTS},
+        "published_agents": published_agents(state),
         # Error disclosure policy: see tradingagents-web SPEC.
         "memory_note": "Past decision memory could not be fully updated or loaded. Research continued; unresolved decisions remain pending."
         if state.get("memory_note")
