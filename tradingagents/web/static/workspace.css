@@ -67,6 +67,11 @@ input:not([type="checkbox"]):focus, select:focus { border-color: var(--accent); 
 .agent-state { color: #9dafca; font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
 .agent-state::before { content: ''; display: inline-block; height: 5px; width: 5px; margin-right: 6px; border-radius: 50%; background: currentColor; vertical-align: middle; }
 .agent-card[data-status="running"] .agent-state { color: #adc9ff; }
+.agent-card[data-status="running"] .agent-state::before { animation: agent-working 1.8s ease-in-out infinite; }
+@keyframes agent-working {
+  0%, 100% { opacity: .55; box-shadow: 0 0 0 0 #adc9ff00; }
+  50% { opacity: 1; box-shadow: 0 0 0 4px #adc9ff30; }
+}
 .agent-card[data-status="completed"] .agent-state { color: #8bd9b5; }
 .agent-card[data-status="failed"] .agent-state, .agent-card[data-status="stopped"] .agent-state { color: #efb0a5; }
 .agent-card[data-status="not-selected"] { background: #101827; border-style: dashed; }

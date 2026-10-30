@@ -316,6 +316,30 @@ def test_compact_agent_cards_preserve_streams(dashboard, width, columns):
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
 
 
+def test_running_agent_animation_tracks_observed_state_and_motion_preference(dashboard):
+    page, state = dashboard
+    page.emulate_media(reduced_motion="no-preference")
+    start(page)
+    indicator = page.locator('[data-agent="market"] .agent-state')
+    animation = "node => getComputedStyle(node, '::before').animationName"
+    assert indicator.evaluate(animation) == "none"
+    state["run"]["agent_status"] = {"market": "running", "news": "queued"}
+    page.reload()
+    playwright.expect(indicator).to_have_text("Running")
+    assert indicator.evaluate(animation) == "agent-working"
+    assert page.locator('[data-agent="news"] .agent-state').evaluate(animation) == "none"
+    page.emulate_media(reduced_motion="reduce")
+    assert indicator.evaluate(animation) == "none"
+    playwright.expect(indicator).to_have_text("Running")
+    page.emulate_media(reduced_motion="no-preference")
+    assert indicator.evaluate(animation) == "agent-working"
+    for status in ("completed", "failed", "stopped", "output_available"):
+        state["run"]["agent_status"]["market"] = status
+        page.reload()
+        playwright.expect(page.locator('[data-agent="market"]')).to_have_attribute("data-status", status)
+        assert indicator.evaluate(animation) == "none"
+
+
 def test_dashboard_desktop_screenshot(dashboard, tmp_path):
     page, _state = dashboard
     page.screenshot(path=str(tmp_path / "dashboard-desktop.png"), full_page=True)
