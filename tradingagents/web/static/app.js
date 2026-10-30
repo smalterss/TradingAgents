@@ -28,27 +28,18 @@ const agentTeams = [
 const agentNames = Object.fromEntries(agentTeams.flatMap(([, agents]) => agents));
 const activityKinds = new Set(["started", "completed", "failed", "tool_started", "tool_completed", "tool_failed"]);
 const agentStates = new Set(["queued", "running", "completed", "failed", "stopped", "output_available"]);
-let selectedAgent = null;
-let followLatest = true;
-let latestSequence = -1;
-const activityNodes = new Map();
+const agentStreams = new Map();
 
 function resetActivity() {
-  selectedAgent = null;
-  latestSequence = -1;
-  activityNodes.clear();
-  $("activity-stream").replaceChildren();
-  $("activity-latest").textContent = "";
-}
-
-function selectAgent(agent) {
-  selectedAgent = agent;
-  renderActivity();
-  if (window.matchMedia("(max-width: 1250px)").matches)
-    $("activity-heading").scrollIntoView({
-      block: "start",
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-    });
+  for (const reader of agentStreams.values()) {
+    reader.nodes.clear();
+    reader.stream.replaceChildren(reader.empty);
+    reader.stream.scrollTop = 0;
+    reader.follow = true;
+    reader.button.setAttribute("aria-pressed", "true");
+    reader.latest.textContent = "";
+    reader.latestSequence = -1;
+  }
 }
 
 function initializeAgents() {
@@ -62,29 +53,51 @@ function initializeAgents() {
     const cards = document.createElement("div");
     cards.className = "agent-cards";
     for (const [id, name] of agents) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "agent-card";
-      button.dataset.agent = id;
-      button.setAttribute("aria-pressed", "false");
-      button.setAttribute("aria-controls", "activity-stream");
-      const label = document.createElement("span");
+      const card = document.createElement("section");
+      card.className = "agent-card";
+      card.dataset.agent = id;
+      card.setAttribute("aria-labelledby", `agent-name-${id}`);
+      const label = document.createElement("h5");
+      label.id = `agent-name-${id}`;
       label.className = "agent-name";
       label.textContent = name;
       const state = document.createElement("span");
       state.className = "agent-state";
-      button.append(label, state);
-      button.addEventListener("click", () => selectAgent(id));
-      cards.append(button);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "follow-latest";
+      button.textContent = "Follow latest";
+      button.setAttribute("aria-label", `Follow latest for ${name}`);
+      button.setAttribute("aria-pressed", "true");
+      button.setAttribute("aria-controls", `agent-stream-${id}`);
+      const stream = document.createElement("div");
+      stream.id = `agent-stream-${id}`;
+      stream.className = "activity-stream";
+      stream.tabIndex = 0;
+      stream.setAttribute("role", "region");
+      stream.setAttribute("aria-label", `${name} stream`);
+      stream.setAttribute("aria-describedby", "activity-retention");
+      const empty = document.createElement("p");
+      empty.className = "activity-empty";
+      stream.append(empty);
+      const latest = document.createElement("p");
+      latest.className = "activity-latest";
+      latest.setAttribute("role", "status");
+      latest.setAttribute("aria-live", "polite");
+      latest.setAttribute("aria-atomic", "true");
+      const reader = { card, state, button, stream, empty, latest, nodes: new Map(), follow: true, latestSequence: -1 };
+      agentStreams.set(id, reader);
+      button.addEventListener("click", () => {
+        reader.follow = !reader.follow;
+        button.setAttribute("aria-pressed", String(reader.follow));
+        if (reader.follow) stream.scrollTop = stream.scrollHeight;
+      });
+      card.append(label, state, button, stream, latest);
+      cards.append(card);
     }
     group.append(heading, cards);
     $("agent-groups").append(group);
   }
-  $("all-agents").addEventListener("click", () => selectAgent(null));
-  $("follow-latest").addEventListener("click", () => {
-    followLatest = !followLatest;
-    $("follow-latest").setAttribute("aria-pressed", String(followLatest));
-  });
 }
 
 function renderActivity() {
@@ -92,21 +105,6 @@ function renderActivity() {
   const analysts = next.status === "idle" || !snapshot
     ? Array.from(form.querySelectorAll('input[name="analyst"]:checked'), (item) => item.value)
     : next.selected_analysts || [];
-  for (const card of document.querySelectorAll("[data-agent]")) {
-    const id = card.dataset.agent;
-    const raw = next.agent_status?.[id];
-    const state = id in analystNames && !analysts.includes(id) ? "not-selected"
-      : agentStates.has(raw) ? raw : "unavailable";
-    const label = state === "not-selected" ? "Not selected"
-      : state === "output_available" ? "Output available · activity not recorded"
-      : state === "unavailable" ? (next.status === "idle" ? "Ready" : "Activity unavailable")
-      : state.charAt(0).toUpperCase() + state.slice(1);
-    card.dataset.status = state;
-    card.querySelector(".agent-state").textContent = label;
-    card.setAttribute("aria-pressed", String(selectedAgent === id));
-  }
-  $("all-agents").setAttribute("aria-pressed", String(selectedAgent === null));
-  $("activity-heading").textContent = agentNames[selectedAgent] || "All agents";
   const seen = new Set();
   const events = (Array.isArray(next.activity) ? next.activity : []).filter((event) => {
     if (!event || !Number.isInteger(event.seq) || seen.has(event.seq) ||
@@ -114,64 +112,83 @@ function renderActivity() {
     seen.add(event.seq);
     return true;
   }).sort((a, b) => a.seq - b.seq).slice(-200);
-  const visible = events.filter((event) => !selectedAgent || event.agent === selectedAgent);
-  const stream = $("activity-stream");
-  const nearBottom = stream.scrollHeight - stream.scrollTop - stream.clientHeight < 48;
-  let changed = false;
-  const keys = new Set(visible.map((event) => event.seq));
-  for (const [seq, entry] of activityNodes) {
-    if (!keys.has(seq)) {
-      entry.node.remove();
-      activityNodes.delete(seq);
+  for (const [id, reader] of agentStreams) {
+    const raw = next.agent_status?.[id];
+    const state = id in analystNames && !analysts.includes(id) ? "not-selected"
+      : agentStates.has(raw) ? raw : "unavailable";
+    reader.card.dataset.status = state;
+    reader.state.textContent = state === "not-selected" ? "Not selected"
+      : state === "output_available" ? "Output available · activity not recorded"
+      : state === "unavailable" ? (next.status === "idle" ? "Ready" : "Activity unavailable")
+      : state.charAt(0).toUpperCase() + state.slice(1);
+    const visible = events.filter((event) => event.agent === id);
+    const { stream, nodes } = reader;
+    const nearBottom = stream.scrollHeight - stream.scrollTop - stream.clientHeight < 48;
+    const top = stream.scrollTop;
+    const keys = new Set(visible.map((event) => event.seq));
+    // Anchor a retained visible record before removing evicted records above it.
+    const anchor = Array.from(stream.children).find((node) =>
+      keys.has(Number(node.dataset.seq)) && node.getBoundingClientRect().bottom > stream.getBoundingClientRect().top);
+    const anchorOffset = anchor?.getBoundingClientRect().top;
+    let changed = false;
+    for (const [seq, entry] of nodes) {
+      if (!keys.has(seq)) {
+        entry.node.remove();
+        nodes.delete(seq);
+        changed = true;
+      }
+    }
+    for (const event of visible) {
+      const signature = JSON.stringify(event);
+      const old = nodes.get(event.seq);
+      if (old?.signature === signature) continue;
+      const node = document.createElement("article");
+      node.className = "activity-event";
+      node.dataset.seq = event.seq;
+      node.dataset.kind = event.kind;
+      const meta = document.createElement("p");
+      meta.className = "activity-meta";
+      meta.textContent = `${agentNames[event.agent]} · ${event.kind.replaceAll("_", " ")} · ${event.timestamp || ""}`;
+      const summary = document.createElement("p");
+      summary.className = "activity-summary";
+      summary.textContent = event.summary || "";
+      node.append(meta, summary);
+      if (typeof event.output_html === "string" && event.output_html) {
+        const output = document.createElement("div");
+        output.className = "activity-output report-content markdown-body";
+        // Same trust boundary as reports: only server-rendered, HTML-disabled Markdown.
+        output.innerHTML = event.output_html;
+        node.append(output);
+      }
+      if (old) old.node.replaceWith(node);
+      else {
+        const after = Array.from(stream.children).find((item) => Number(item.dataset.seq) > event.seq);
+        stream.insertBefore(node, after || null);
+      }
+      nodes.set(event.seq, { node, signature });
       changed = true;
     }
-  }
-  for (const event of visible) {
-    const signature = JSON.stringify(event);
-    const old = activityNodes.get(event.seq);
-    if (old?.signature === signature) continue;
-    const node = document.createElement("article");
-    node.className = "activity-event";
-    node.dataset.seq = event.seq;
-    node.dataset.kind = event.kind;
-    const meta = document.createElement("p");
-    meta.className = "activity-meta";
-    meta.textContent = `${agentNames[event.agent]} · ${event.kind.replaceAll("_", " ")} · ${event.timestamp || ""}`;
-    const summary = document.createElement("p");
-    summary.className = "activity-summary";
-    summary.textContent = event.summary || "";
-    node.append(meta, summary);
-    if (typeof event.output_html === "string" && event.output_html) {
-      const output = document.createElement("div");
-      output.className = "activity-output report-content markdown-body";
-      // Same trust boundary as reports: only server-rendered, HTML-disabled Markdown.
-      output.innerHTML = event.output_html;
-      node.append(output);
+    reader.empty.hidden = visible.length > 0;
+    reader.empty.textContent = state === "not-selected"
+      ? "This analyst was not selected."
+      : next.status === "idle" || !snapshot
+        ? "Start a run to follow real agent activity."
+        : !Array.isArray(next.activity)
+          ? "Activity unavailable for this snapshot. Any published reports remain below."
+          : runningStates.has(next.status)
+            ? "Waiting for this agent. Only observed events appear here."
+            : `No activity recorded for this agent in the retained window (${next.status}). Any available reports remain below.`;
+    const latest = visible.at(-1);
+    if (latest && latest.seq > reader.latestSequence) {
+      reader.latest.textContent = `${agentNames[id]}: ${latest.summary || latest.kind.replaceAll("_", " ")}`;
+      reader.latestSequence = latest.seq;
+    } else if (!latest) reader.latest.textContent = "";
+    if (changed) {
+      if (reader.follow && nearBottom) stream.scrollTop = stream.scrollHeight;
+      else if (anchor?.isConnected) stream.scrollTop = top + anchor.getBoundingClientRect().top - anchorOffset;
+      else stream.scrollTop = top;
     }
-    if (old) old.node.replaceWith(node);
-    else {
-      const after = Array.from(stream.children).find((item) => Number(item.dataset.seq) > event.seq);
-      stream.insertBefore(node, after || null);
-      if (visible.length <= 10 || (latestSequence >= 0 && event.seq > latestSequence))
-        window.dashboardMotion?.enter(node);
-    }
-    activityNodes.set(event.seq, { node, signature });
-    changed = true;
   }
-  const latest = events.at(-1);
-  if (latest && latest.seq > latestSequence) {
-    $("activity-latest").textContent = `${agentNames[latest.agent]}: ${latest.summary || latest.kind.replaceAll("_", " ")}`;
-    latestSequence = latest.seq;
-  }
-  $("activity-empty").hidden = visible.length > 0;
-  $("activity-empty").textContent = next.status === "idle"
-    ? "Start a run to follow real agent activity."
-    : !Array.isArray(next.activity)
-      ? "Activity unavailable for this snapshot. Any published reports remain below."
-      : runningStates.has(next.status)
-        ? "Waiting for activity from this team. Only observed events appear here."
-        : "No activity recorded for this selection. Any available reports remain below.";
-  if (changed && followLatest && nearBottom) stream.scrollTop = stream.scrollHeight;
 }
 
 function message(id, text) {
@@ -554,7 +571,7 @@ async function initialize() {
     configure(await request("/api/config"));
     await refresh();
     controls();
-    window.dashboardMotion?.enter(".setup-panel, .workspace-heading, .agent-roster, .activity-panel", true);
+    window.dashboardMotion?.enter(".setup-panel, .workspace-heading, .agent-roster", true);
     setInterval(refresh, 1000);
   } catch (_) {
     $("run-status").textContent = "OFFLINE";

@@ -126,7 +126,8 @@ def test_workspace_without_pipeline_preserves_agent_activity(dashboard, width):
         playwright.expect(page.locator("#run-status")).to_have_text(expected_status)
         playwright.expect(page.locator(".pipeline-card, [data-stage], #analyst-progress")).to_have_count(0)
         playwright.expect(page.locator(".agent-roster")).to_be_visible()
-        playwright.expect(page.locator(".activity-panel")).to_be_visible()
+        playwright.expect(page.locator(".activity-stream")).to_have_count(12)
+        playwright.expect(page.locator("#all-agents, #activity-stream, .activity-panel")).to_have_count(0)
         playwright.expect(page.locator(".agent-card")).to_have_count(12)
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
 
@@ -292,7 +293,7 @@ def activity(seq, agent="market", kind="started", **extra):
 
 
 @pytest.mark.parametrize("width", [1440, 390])
-def test_agent_workbench_real_activity_and_selection(dashboard, width):
+def test_agent_workbench_always_visible_individual_activity(dashboard, width):
     page, state = dashboard
     page.set_viewport_size({"width": width, "height": 1100})
     playwright.expect(page.locator(".agent-team")).to_have_count(5)
@@ -318,31 +319,33 @@ def test_agent_workbench_real_activity_and_selection(dashboard, width):
     assert page.locator(".activity-summary img").count() == 0
     playwright.expect(page.locator(".activity-output h2")).to_have_text("Published contribution")
     market = page.locator('[data-agent="market"]')
-    market.focus()
+    bull = page.locator('[data-agent="bull"]')
+    playwright.expect(market.locator(".activity-event")).to_have_count(2)
+    playwright.expect(bull.locator(".activity-event")).to_have_count(1)
+    playwright.expect(market.locator(".activity-stream")).to_be_visible()
+    playwright.expect(bull.locator(".activity-stream")).to_be_visible()
+    assert market.evaluate("node => node.tagName") == "SECTION"
+    follow = market.get_by_role("button", name="Follow latest for Market Analyst")
+    follow.focus()
     page.keyboard.press("Enter")
-    playwright.expect(market).to_have_attribute("aria-pressed", "true")
-    playwright.expect(page.locator(".activity-event")).to_have_count(2)
+    playwright.expect(follow).to_have_attribute("aria-pressed", "false")
     page.locator('.activity-event[data-seq="1"]').evaluate("node => window.originalEvent = node")
     state["run"]["activity"].append(activity(6, kind="tool_started"))
-    playwright.expect(page.locator(".activity-event")).to_have_count(3)
-    playwright.expect(market).to_be_focused()
-    playwright.expect(market).to_have_attribute("aria-pressed", "true")
+    playwright.expect(market.locator(".activity-event")).to_have_count(3)
+    playwright.expect(bull.locator(".activity-event")).to_have_count(1)
+    playwright.expect(follow).to_be_focused()
     assert page.locator('.activity-event[data-seq="1"]').evaluate("node => node === window.originalEvent")
-    page.locator("#follow-latest").click()
-    playwright.expect(page.locator("#follow-latest")).to_have_attribute("aria-pressed", "false")
-    page.locator("#all-agents").click()
-    playwright.expect(page.locator(".activity-event")).to_have_count(4)
+    playwright.expect(bull.locator(".follow-latest")).to_have_attribute("aria-pressed", "true")
     page.get_by_role("button", name="Stop analysis").click()
     playwright.expect(page.locator("#run-notice")).to_contain_text("partial")
     playwright.expect(page.locator(".activity-event")).to_have_count(4)
-    market.click()
     page.get_by_role("button", name="Run analysis").click()
-    playwright.expect(page.locator("#all-agents")).to_have_attribute("aria-pressed", "true")
+    playwright.expect(follow).to_have_attribute("aria-pressed", "true")
     playwright.expect(page.locator(".activity-event")).to_have_count(0)
-    playwright.expect(page.locator("#activity-latest")).to_be_empty()
+    assert page.locator(".activity-latest").all_text_contents() == [""] * 12
     state["run"].update(status="failed", activity=[], error="Provider unavailable; partial evidence only.")
     playwright.expect(page.locator("#run-status")).to_have_text("FAILED")
-    playwright.expect(page.locator("#activity-empty")).to_contain_text("No activity recorded")
+    playwright.expect(page.locator('[data-agent="market"] .activity-empty')).to_contain_text("No activity recorded")
     playwright.expect(page.locator("#run-notice")).to_contain_text("partial")
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
 
@@ -350,29 +353,66 @@ def test_agent_workbench_real_activity_and_selection(dashboard, width):
 def test_agent_feed_reading_position_and_retention(dashboard):
     page, state = dashboard
     start(page)
-    # A constrained reader models the final CSS without owning presentation here.
-    page.locator("#activity-stream").evaluate("node => {node.style.height = '180px'; node.style.overflow = 'auto';}")
+    # Constrain the reader to exercise overflow and retained-record anchoring.
+    page.locator("#agent-stream-market").evaluate("node => {node.style.height = '180px'; node.style.overflow = 'auto';}")
     state["run"].update(activity=[activity(seq) for seq in range(1, 202)])
     playwright.expect(page.locator(".activity-event")).to_have_count(200)
     playwright.expect(page.locator(".activity-event").first).to_have_attribute("data-seq", "2")
-    stream = page.locator("#activity-stream")
-    stream.evaluate("node => node.scrollTop = 0")
+    stream = page.locator("#agent-stream-market")
+    stream.evaluate("node => node.scrollTop = 500")
+    anchor = stream.locator('.activity-event[data-seq="10"]')
+    before = anchor.evaluate("node => node.getBoundingClientRect().top")
     state["run"]["activity"].append(activity(202, kind="tool_completed"))
     playwright.expect(page.locator(".activity-event").last).to_have_attribute("data-seq", "202")
-    assert stream.evaluate("node => node.scrollTop") == 0
+    assert abs(anchor.evaluate("node => node.getBoundingClientRect().top") - before) < 2
     stream.evaluate("node => node.scrollTop = node.scrollHeight")
     state["run"]["activity"].append(activity(203, kind="tool_failed"))
     playwright.expect(page.locator(".activity-event").last).to_have_attribute("data-seq", "203")
     assert stream.evaluate("node => node.scrollHeight - node.scrollTop - node.clientHeight < 2")
-    page.locator("#follow-latest").click()
+    page.locator('[data-agent="market"] .follow-latest').click()
     stream.evaluate("node => node.scrollTop = 0")
     state["run"]["activity"].append(activity(204, kind="failed"))
     playwright.expect(page.locator(".activity-event").last).to_have_attribute("data-seq", "204")
     assert stream.evaluate("node => node.scrollTop") == 0
     # Switching to a different run clears old events even if it has no activity field.
-    state["run"] = {**deepcopy(IDLE), "id": "different-run", "status": "running"}
+    state["run"] = {**deepcopy(IDLE), "id": "different-run", "status": "running",
+                     "selected_analysts": ["market"]}
     playwright.expect(page.locator(".activity-event")).to_have_count(0)
-    playwright.expect(page.locator("#activity-empty")).to_contain_text("Activity unavailable")
+    playwright.expect(page.locator('[data-agent="market"] .activity-empty')).to_contain_text("Activity unavailable")
+
+
+@pytest.mark.parametrize("width", [1440, 390])
+def test_all_agent_streams_route_and_follow_independently(dashboard, width):
+    page, state = dashboard
+    page.set_viewport_size({"width": width, "height": 1100})
+    start(page)
+    agents = page.locator(".agent-card").evaluate_all("nodes => nodes.map(node => node.dataset.agent)")
+    state["run"]["activity"] = [activity(seq, agent) for seq, agent in enumerate(agents, 1)]
+    playwright.expect(page.locator(".activity-event")).to_have_count(12)
+    for seq, agent in enumerate(agents, 1):
+        card = page.locator(f'[data-agent="{agent}"]')
+        playwright.expect(card.locator(".activity-stream")).to_be_visible()
+        playwright.expect(card.locator(".activity-event")).to_have_count(1)
+        playwright.expect(card.locator(".activity-event")).to_have_attribute("data-seq", str(seq))
+        playwright.expect(card.locator(".activity-stream")).to_have_attribute("tabindex", "0")
+    market = page.locator("#agent-stream-market")
+    bull = page.locator("#agent-stream-bull")
+    state["run"]["activity"] = [activity(seq, "market" if seq % 2 else "bull") for seq in range(20, 60)]
+    playwright.expect(page.locator(".activity-event")).to_have_count(40)
+    page.locator('[data-agent="market"] .follow-latest').click()
+    market.evaluate("node => node.scrollTop = node.scrollHeight")
+    bull.evaluate("node => node.scrollTop = node.scrollHeight")
+    previous_top = market.evaluate("node => node.scrollTop")
+    market.evaluate("node => {window.originalStream = node; node.focus();}")
+    state["run"]["activity"].extend([activity(60, "bull"), activity(61, "market")])
+    playwright.expect(page.locator(".activity-event")).to_have_count(42)
+    assert market.evaluate("node => node.scrollTop") == previous_top
+    assert bull.evaluate("node => node.scrollHeight - node.scrollTop - node.clientHeight < 2")
+    assert market.evaluate("node => node === window.originalStream")
+    playwright.expect(market).to_be_focused()
+    page.locator('[data-agent="market"] .follow-latest').click()
+    assert market.evaluate("node => node.scrollHeight - node.scrollTop - node.clientHeight < 2")
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
 
 
 @pytest.mark.parametrize("width", [1440, 390])
@@ -392,8 +432,7 @@ def test_local_libraries_motion_and_report_formatting(dashboard, width):
                                   activity(3, kind="completed", output_html=output)],
                         sections=[{"id": "market", "title": "Market", "html": output}])
     playwright.expect(page.locator(".activity-output h2")).to_have_text("Market evidence")
-    page.locator('[data-agent="market"]').click()
-    playwright.expect(page.locator("#activity-heading")).to_have_text("Market Analyst")
+    playwright.expect(page.get_by_role("region", name="Market Analyst stream", exact=True)).to_be_visible()
     playwright.expect(page.locator("#report-content table")).to_be_visible()
     assert page.locator("#report-content").evaluate("node => parseFloat(getComputedStyle(node).lineHeight) >= 24")
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
@@ -402,12 +441,12 @@ def test_local_libraries_motion_and_report_formatting(dashboard, width):
     page.screenshot(path=str(shots / f"agent-workspace-{width}.png"), full_page=True)
     page.emulate_media(reduced_motion="no-preference")
     assert page.evaluate("""() => {
-        const node = document.querySelector('.activity-panel');
+        const node = document.querySelector('.agent-card');
         dashboardMotion.enter(node);
         return anime.running.some(animation => animation.animatables.some(item => item.target === node));
     }""")
     page.emulate_media(reduced_motion="reduce")
-    page.wait_for_function("() => { const node = document.querySelector('.activity-panel'); return !node.style.opacity && !node.style.transform; }")
+    page.wait_for_function("() => { const node = document.querySelector('.agent-card'); return !node.style.opacity && !node.style.transform; }")
 
 
 def test_dashboard_remains_usable_without_animation_library(dashboard):
