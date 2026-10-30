@@ -58,11 +58,11 @@ input:not([type="checkbox"]):focus, select:focus { border-color: var(--accent); 
 .agent-workbench { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; margin: 22px 0; align-items: stretch; }
 .agent-roster { min-width: 0; padding: 22px; background: #101827; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 10px 30px #00000014; }
 .agent-roster > h3 { margin: 6px 0 16px; font-size: 20px; letter-spacing: -.4px; line-height: 1.3; overflow-wrap: anywhere; }
-.follow-latest { align-self: start; background: #17253e; color: #b8cae9; border: 1px solid #385071; border-radius: 7px; padding: 8px 12px; font-size: 11px; }
+.follow-latest { grid-column: 2; grid-row: 1 / 3; align-self: center; background: #17253e; color: #b8cae9; border: 1px solid #385071; border-radius: 7px; padding: 6px 9px; font-size: 11px; }
 .follow-latest[aria-pressed="true"] { background: #20375b; color: #d6e4ff; border-color: #6f92cb; }
 .agent-team h4 { color: #a1b3cf; text-transform: uppercase; letter-spacing: 1.3px; font-size: 10px; margin: 23px 0 10px; }
-.agent-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.agent-card { display: flex; flex-direction: column; justify-content: start; gap: 10px; min-width: 0; min-height: 80px; padding: 13px 11px; background: #141f32; color: #e2ebfa; border: 1px solid #2c3d59; border-radius: 9px; text-align: left; }
+.agent-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.agent-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: start; gap: 6px 10px; min-width: 0; padding: 10px; background: #141f32; color: #e2ebfa; border: 1px solid #2c3d59; border-radius: 9px; text-align: left; }
 .agent-name { margin: 0; color: #dce8ff; font-size: 12px; line-height: 1.4; font-weight: 650; overflow-wrap: anywhere; }
 .agent-state { color: #9dafca; font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
 .agent-state::before { content: ''; display: inline-block; height: 5px; width: 5px; margin-right: 6px; border-radius: 50%; background: currentColor; vertical-align: middle; }
@@ -72,7 +72,7 @@ input:not([type="checkbox"]):focus, select:focus { border-color: var(--accent); 
 .agent-card[data-status="not-selected"] { background: #101827; border-style: dashed; }
 .agent-card[data-status="output_available"] .agent-state { color: #e3c18b; }
 .activity-retention { margin: 13px 0 18px; color: #94a6c3; font-size: 10px; line-height: 1.6; }
-.activity-stream { height: 280px; min-height: 0; flex: none; overflow: auto; overflow-anchor: none; scrollbar-color: #41577c #111b2c; padding: 2px 10px 12px 5px; overscroll-behavior: contain; }
+.activity-stream { grid-column: 1 / -1; height: 160px; min-width: 0; min-height: 0; overflow: auto; overflow-anchor: none; scrollbar-color: #41577c #111b2c; padding: 2px 6px 8px 5px; overscroll-behavior: contain; }
 .activity-event { position: relative; border-left: 1px solid #3a5177; padding: 0 0 26px 19px; margin-left: 3px; overflow-wrap: anywhere; }
 .activity-event::before { content: ''; width: 7px; height: 7px; background: #91b2f7; border-radius: 50%; position: absolute; top: 7px; left: -4px; }
 .activity-event[data-kind="completed"]::before, .activity-event[data-kind="tool_completed"]::before { background: #8bd9b5; }
@@ -80,8 +80,8 @@ input:not([type="checkbox"]):focus, select:focus { border-color: var(--accent); 
 .activity-meta { color: #a3b5d2; font: 10px/1.7 var(--mono); margin: 0 0 7px; }
 .activity-summary { font-size: 13px; font-weight: 600; color: #e1eafb; margin: 0 0 10px; }
 .activity-output.report-content { background: #0d1523; border: 1px solid #293e5e; border-radius: 9px; padding: 16px; margin: 14px 0 0; font-size: 13px; }
-.activity-empty { padding: 36px 20px; color: #a1b3cf; border: 1px dashed #354a6b; border-radius: 10px; font-size: 13px; text-align: center; margin: 0 0 16px; }
-.activity-latest { margin: 16px 0 0; padding: 12px 0 0; border-top: 1px solid #2a3c58; color: #a7bee5; font-size: 11px; line-height: 1.7; overflow-wrap: anywhere; }
+.activity-empty { padding: 18px 12px; color: #a1b3cf; border: 1px dashed #354a6b; border-radius: 8px; font-size: 13px; text-align: center; margin: 0 0 8px; }
+.activity-latest { grid-column: 1 / -1; margin: 4px 0 0; padding: 6px 0 0; border-top: 1px solid #2a3c58; color: #a7bee5; font-size: 11px; line-height: 1.7; overflow-wrap: anywhere; }
 .activity-latest:empty { display: none; }
 .notice { background: #15243a; border-color: #385170; color: #c3d4ef; border-radius: 9px; }
 .error-notice { background: #30232c; border-color: #76505b; color: #f2c0bb; }
@@ -138,7 +138,7 @@ input:not([type="checkbox"]):focus, select:focus { border-color: var(--accent); 
   .workspace { padding: 26px 22px 0; }
   .setup-panel { padding: 26px 18px; }
   .agent-workbench { grid-template-columns: 1fr; }
-  .agent-card { min-height: 76px; }
+  .agent-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 760px) {
   .topbar { padding: 0 18px; height: 72px; }
@@ -153,9 +153,8 @@ input:not([type="checkbox"]):focus, select:focus { border-color: var(--accent); 
   .model-details[open] { display: block; }
   .agent-roster { padding: 18px 14px; }
   #agent-groups { display: block; }
-  .agent-card { min-height: 80px; padding: 13px; }
   .agent-cards { grid-template-columns: 1fr; }
-  .activity-stream { height: 250px; padding-right: 3px; }
+  .activity-stream { padding-right: 3px; }
   .activity-output.report-content { padding: 12px; }
   .activity-meta { font-size: 9px; }
   .report-toolbar { flex-wrap: wrap; gap: 16px; padding: 20px 16px; }

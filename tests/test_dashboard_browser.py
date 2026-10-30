@@ -299,6 +299,23 @@ def test_compact_research_header_preserves_context(dashboard, width):
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
 
 
+@pytest.mark.parametrize("width,columns", [(1440, 3), (1000, 2), (390, 1)])
+def test_compact_agent_cards_preserve_streams(dashboard, width, columns):
+    page, _state = dashboard
+    page.set_viewport_size({"width": width, "height": 1100})
+    playwright.expect(page.locator(".agent-card")).to_have_count(12)
+    grid = page.locator(".agent-cards").first
+    assert grid.evaluate("node => getComputedStyle(node).gridTemplateColumns.split(' ').length") == columns
+    card = page.locator('[data-agent="market"]')
+    assert card.bounding_box()["height"] < 260
+    stream = card.locator(".activity-stream")
+    assert stream.evaluate("node => parseFloat(getComputedStyle(node).height)") == 160
+    playwright.expect(stream).to_be_visible()
+    playwright.expect(card.get_by_role("button", name="Follow latest for Market Analyst")).to_be_visible()
+    assert card.evaluate("node => node.scrollWidth <= node.clientWidth")
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+
+
 def test_dashboard_desktop_screenshot(dashboard, tmp_path):
     page, _state = dashboard
     page.screenshot(path=str(tmp_path / "dashboard-desktop.png"), full_page=True)
