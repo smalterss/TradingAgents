@@ -19,7 +19,7 @@ Python 3.11+ hosts a LangGraph workflow, LangChain model adapters, vendor-backed
 - SDK-specific model behavior stays in adapters; agent roles consume supplied model interfaces. Configuration can select a different provider for each reasoning tier without leaking the main provider's endpoint to another tier.
 - Vendor-library access belongs in dataflows. The current AST layering gate enforces this for `yfinance` only, not all network calls or SDKs.
 - A missing or unreadable decision is not silently a neutral investment call. The canonical output contract belongs to `tradingagents-agents`.
-- External data/model failures remain distinguishable from market evidence; successful research output does not imply an executed trade.
+- External data/model failures remain distinguishable from market evidence; successful research output does not imply an executed trade. The opted-in dashboard worker may call the dedicated Alpaca paper-execution service after research and an initial report export succeed; graph/agent/report code does not submit orders. Broker outcomes and research outcomes remain separate.
 
 ## Verification boundary
 

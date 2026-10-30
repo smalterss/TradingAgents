@@ -52,7 +52,7 @@ def browser():
 @pytest.fixture
 def dashboard(browser):
     page = browser.new_page(viewport={"width": 1440, "height": 1100})
-    state = {"run": deepcopy(IDLE), "posts": [], "error": None, "defer_poll": False, "pending_poll": None}
+    state = {"run": deepcopy(IDLE), "config": deepcopy(CONFIG), "posts": [], "error": None, "defer_poll": False, "pending_poll": None}
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
 
@@ -60,7 +60,7 @@ def dashboard(browser):
         req = route.request
         path = urlparse(req.url).path
         if path == "/api/config":
-            route.fulfill(json=CONFIG)
+            route.fulfill(json=state["config"])
         elif path == "/api/run" and req.method == "POST":
             state["posts"].append(req.post_data_json)
             assert req.headers["x-csrf-token"] == CONFIG["csrf_token"]
@@ -103,6 +103,65 @@ def start(page):
     page.get_by_label("Instrument", exact=False).fill("NVDA")
     page.get_by_role("button", name="Run analysis").click()
     playwright.expect(page.locator("#run-status")).to_have_text("RESEARCHING")
+
+
+@pytest.mark.parametrize("width", [1440, 390])
+def test_paper_automation_indicator_and_actual_outcome(dashboard, width):
+    page, state = dashboard
+    state["config"]["paper_execution_enabled"] = True
+    page.set_viewport_size({"width": width, "height": 1100})
+    page.reload()
+    playwright.expect(page.locator("#execution-mode")).to_have_text("PAPER AUTO ON")
+    playwright.expect(page.locator("#paper-automation-notice")).to_contain_text("No live trades")
+    start(page)
+    playwright.expect(page.locator("#paper-execution")).to_be_hidden()
+    state["run"].update(status="completed", rating="Buy", paper_execution=
+        "<p>Status: <strong>submitted</strong>. Submission is not a fill.</p>"
+        "<p>Buy AAPL · Notional: 25.00 · Broker status: accepted</p>")
+    playwright.expect(page.locator("#paper-execution")).to_be_visible()
+    playwright.expect(page.locator("#paper-execution-content")).to_contain_text("submitted")
+    playwright.expect(page.locator("#paper-execution")).to_contain_text("Submitted does not mean filled")
+    assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+    shots = ASSETS.parents[2] / ".thinkrail" / "context" / "qa"
+    shots.mkdir(parents=True, exist_ok=True)
+    page.locator("#paper-execution").screenshot(path=str(shots / f"paper-outcome-{width}.png"))
+    page.reload()
+    playwright.expect(page.locator("#paper-execution-content")).to_contain_text("submitted")
+    page.get_by_role("button", name="Run analysis").click()
+    playwright.expect(page.locator("#paper-execution")).to_be_hidden()
+    assert page.locator("#paper-execution-content").text_content() == ""
+    state["run"].update(status="stopped", paper_execution="STALE")
+    playwright.expect(page.locator("#run-status")).to_have_text("STOPPED")
+    playwright.expect(page.locator("#run-notice")).to_contain_text("check Alpaca")
+    playwright.expect(page.locator("#paper-execution")).to_be_hidden()
+
+
+@pytest.mark.parametrize("width", [1440, 390])
+def test_completed_manager_summary_and_next_run_reset(dashboard, width):
+    page, state = dashboard
+    page.set_viewport_size({"width": width, "height": 1100})
+    playwright.expect(page.locator("#manager-summary")).to_be_hidden()
+    start(page)
+    state["run"].update(status="completed", rating="Hold", manager_summary={
+        "portfolio": "<p>Cash available: 5,000.00 USD</p><p>No current position in NVDA</p>",
+        "recommendation": "<p><strong>Rating: Hold</strong></p><p>Wait for earnings before adding exposure.</p>",
+    })
+    playwright.expect(page.locator("#manager-summary")).to_be_visible()
+    playwright.expect(page.locator("#manager-portfolio")).to_contain_text("5,000.00 USD")
+    playwright.expect(page.locator("#manager-recommendation")).to_contain_text("Wait for earnings")
+    page.reload()
+    playwright.expect(page.locator("#manager-portfolio")).to_contain_text("5,000.00 USD")
+    assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+    shots = ASSETS.parents[2] / ".thinkrail" / "context" / "qa"
+    shots.mkdir(parents=True, exist_ok=True)
+    page.locator("#manager-summary").screenshot(path=str(shots / f"manager-summary-{width}.png"))
+    page.get_by_role("button", name="Run analysis").click()
+    playwright.expect(page.locator("#run-status")).to_have_text("RESEARCHING")
+    playwright.expect(page.locator("#manager-summary")).to_be_hidden()
+    assert page.locator("#manager-portfolio").text_content() == ""
+    state["run"].update(status="failed", manager_summary={"portfolio": "STALE", "recommendation": "Buy"})
+    playwright.expect(page.locator("#run-status")).to_have_text("FAILED")
+    playwright.expect(page.locator("#manager-summary")).to_be_hidden()
 
 
 def test_dashboard_setup_start_stop_and_partial_reports(dashboard):

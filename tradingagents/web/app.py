@@ -59,6 +59,8 @@ def idle_snapshot():
         "stage": "analysts",
         "analyst_status": dict.fromkeys(ANALYSTS, "pending"),
         "rating": None,
+        "manager_summary": None,
+        "paper_execution": None,
         "error": None,
         "memory_note": "",
         "downloads": False,
@@ -111,6 +113,16 @@ class RunManager:
                 self.ended = time.monotonic()
                 if kind == "completed":
                     self.current["rating"] = event.get("rating")
+                    summary = event.get("manager_summary") or {}
+                    self.current["manager_summary"] = {
+                        key: render_markdown(summary[key])
+                        for key in ("portfolio", "recommendation")
+                        if isinstance(summary.get(key), str)
+                    }
+                    execution = event.get("paper_execution_report")
+                    self.current["paper_execution"] = (
+                        render_markdown(execution) if isinstance(execution, str) and execution else None
+                    )
                     self.current["downloads"] = True
                 else:
                     self.current["error"] = (
@@ -175,7 +187,12 @@ class RunManager:
                     "title": TITLES["overview"],
                     "html": render_markdown(
                         f"## {selection['ticker']} · {selection['trade_date']}\n\n"
-                        "Investment research only. No trades are executed."
+                        + (
+                            "Paper automation is enabled. Eligible current-day Buy/Sell decisions may submit "
+                            "simulated Alpaca orders; live trading is disabled. Submission is not a fill."
+                            if self.base.get("alpaca_paper_execution_enabled") is True
+                            else "Investment research only. No trades are executed."
+                        )
                     ),
                 }
             }

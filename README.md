@@ -107,7 +107,7 @@ The selected analysts work at the same time, each on its own tools, and the rese
 
 ### Risk Management and Portfolio Manager
 - Continuously evaluates portfolio risk by assessing market volatility, liquidity, and other risk factors. The risk management team evaluates and adjusts trading strategies, providing assessment reports to the Portfolio Manager for final decision.
-- The Portfolio Manager approves/rejects the transaction proposal. If approved, the order will be sent to the simulated exchange and executed.
+- The Portfolio Manager produces a final rating and may recommend a dollar amount for a Buy. Explicitly enabled dashboard automation can submit eligible Buy/Sell decisions to Alpaca's paper account; submission and fill are distinct, and live trading is disabled.
 
 <p align="center">
   <img src="assets/risk.png" width="70%" style="display: inline-block; margin: 0 2%;">
@@ -237,7 +237,7 @@ One analysis runs at a time. **Stop analysis** terminates local analysis work an
 
 The server binds only to loopback and is intended for one person on their own computer, not a public or shared service. It uses your existing data-vendor and endpoint configuration. Portfolio editing, backtesting, history browsing, and browser-based sign-in are not included; use the Python API or CLI for those workflows (including `tradingagents login chatgpt` before using a subscription). Analysis retains the existing memory-settlement behavior, which may make additional provider calls for past decisions.
 
-This is a research dashboard, not a brokerage terminal: **no orders are executed**. Historical source coverage can be incomplete, and model output is not guaranteed or financial advice.
+By default the dashboard is research-only. Explicitly enabled **Alpaca paper automation** can submit simulated orders after eligible current-day analyses; **live trading is disabled**. The header and run overview show the active mode. Historical source coverage can be incomplete, and model output is not guaranteed or financial advice.
 
 Dashboard tests do not call model providers. For the optional browser checks:
 
@@ -345,7 +345,7 @@ It covers companies that file with the SEC, including foreign companies listed i
 
 Without portfolio input or Alpaca credentials, the agents do not know what you hold. Pass a portfolio to have the trader, the risk analysts and the portfolio manager work against your actual book.
 
-**Alpaca paper account (read-only):** set `ALPACA_API_KEY` and `ALPACA_API_SECRET` in your environment or local `.env` (the standard `APCA_API_KEY_ID` / `APCA_API_SECRET_KEY` names are also supported). CLI, dashboard and Python analyses automatically fetch cash and open positions once per run. Credentials are never sent to the models; no orders are submitted. Restart an already-running dashboard after changing its environment.
+**Alpaca paper account (read-only):** set `ALPACA_API_KEY` and `ALPACA_API_SECRET` in your environment or local `.env` (the standard `APCA_API_KEY_ID` / `APCA_API_SECRET_KEY` names are also supported). CLI, dashboard and Python analyses automatically fetch cash and open positions once per run. Credentials are never sent to the models; portfolio reading itself never submits orders. Restart an already-running dashboard after changing its environment.
 
 Automatic fetching is enabled when credentials are present. Set `TRADINGAGENTS_ALPACA_PORTFOLIO_ENABLED=false` (or `config["alpaca_portfolio_enabled"] = False`) to disable it. An explicitly supplied portfolio always takes precedence. Fetch failures stop analysis; current holdings are only fetched for today's New York date. Past-date analyses require an explicit portfolio or disabling Alpaca context. Backtest grids do not fetch Alpaca holdings. Cash is the account cash balance, not leveraged buying power.
 
@@ -362,7 +362,20 @@ _, decision = ta.propagate("NVDA", "2026-09-01", portfolio=portfolio)
 
 The CLI takes the same content as a JSON file: `tradingagents --portfolio my_book.json`.
 
+After a run completes, the dashboard and terminal show **Portfolio given to the manager** alongside **Manager’s recommendation**. This uses the exact portfolio context and original decision from that run—not refreshed balances or an additional AI summary. Saved Markdown/HTML reports retain the same input beside the decision (`5_portfolio/context.md` and `decision.md`). Missing portfolio context is explicitly marked, not assumed to mean zero holdings. Recommendations alone are not orders. If dashboard paper automation is enabled, a separate outcome panel and report show what Alpaca actually accepted or filled.
+
 An empty `positions` list means a flat book, which is different from passing nothing. A run without a portfolio is never treated as flat.
+
+### Optional dashboard paper execution
+
+Set `TRADINGAGENTS_ALPACA_PAPER_EXECUTION_ENABLED=true` in the local environment/`.env`, then restart the dashboard. The default is **false**; Alpaca credentials alone do not authorize orders. This applies only to **new dashboard runs**, not CLI/Python analyses, backtests, historical recommendations or past dashboard results.
+
+- Only a validated structured **Buy** or **Sell** rating can trade eligible US-listed stocks/ETFs during the current regular session. Other ratings, text-only decisions, closed markets and the final minute before market close skip with an explanation.
+- The manager recommends a positive USD Buy amount, in cents, without a fixed per-stock cap. Fresh paper-account cash bounds it; margin buying power is never used. Buy requires fractional eligibility. Sell closes available long holdings, never opens a short. Existing conflicting orders or unresolved submissions block new orders.
+- Orders use the fixed Alpaca **paper** endpoint, market/day terms and no extended hours. The application never calls a live-trading endpoint.
+- The dashboard and saved `6_paper_execution/execution.md` show the last confirmed broker response. **Submitted is not filled.** There is no continuous fill polling; inspect Alpaca for current status. Execution failures do not erase research results.
+- A durable local journal (`~/.tradingagents/paper_execution.sqlite3`, plus its SQLite mutex file) prevents blind resubmission of the same run after a timeout or crash. **Do not delete these files to retry an uncertain order.** Unknown outcomes require inspection; a new run is not a safe substitute until the earlier outcome is reconciled.
+- Stopping/restarting the dashboard cannot recall a paper order already submitted. No arbitrary test trade is submitted during setup. Disable the environment flag and restart to return future runs to research-only mode.
 
 ## Persistence and Recovery
 
